@@ -5,20 +5,17 @@ with_date: true # boolean if the title should the date as a prefix
 prompt:
   # the main prompt for the AI
   main: |
-    * this is a text from a PDF document generated with OCR
-    * begin the text with the following line: ### begin of text ###
-    * end the text with the following line: ### end of text ###
-    * generate a title for that given text in the corresponding language
-    * add the sender or author of the document with a maximum of 20 characters to the  title 
-    * remove all stop words from the title
-    * the  title must be in a Concise and Informative style
-    * remove duplicate information
-    * the length must be smaller that 127 characters
-    * do not use asterisks in the title
-    * do not use currencies in the result
-    * optimize it for readability
-    * check the result for filename conventions
-    * re-read the generated  title and optimize it
+    - Begin the text with: BEGIN: """
+    - End the text with: """ END:
+    - Generate a concise, informative title in the corresponding language
+    - Include the sender or author (max 20 characters) in the title
+    - Remove all stop words from the title
+    - Ensure the title is unique and free of duplicate information
+    - Keep the title under 127 characters
+    - Avoid using asterisks in the title
+    - Optimize the title for readability
+    - Check the title against filename conventions
+    - Re-read and further optimize the title if necessary
   # the prompt part will be appended if the date should be included in the title using with_date: true
   with_date: |
     * analyze the text and find the date of the document
@@ -30,7 +27,7 @@ prompt:
     * use the form: sender title
   # the prompt before the content of the document will be appended
   pre_content: |
-    ### begin of text ###
+    BEGIN: """
   # the prompt after the content of the document will be appended
   post_content: |  
-    ### end of text ###
+    """ END:
