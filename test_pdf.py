@@ -13,7 +13,7 @@ load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
 
-ai = OpenAITitles(api_key)
+ai = OpenAITitles(api_key, "/usr/src/ngx-renamer/settings.yaml")
 
 def main():
     parser = argparse.ArgumentParser(description="get the title of a pdf document")

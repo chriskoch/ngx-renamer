@@ -38,6 +38,8 @@ OPENAI_API_KEY=<your_key_from_openai>
 # you find the api key in your paperless user proofile
 PAPERLESS_NGX_API_KEY=<your_paperless_api_token>
 # the url of your paperless installation
+# it must be accesible from the container
+# http://<container_name>:<port> e.g. http://paperless-webserver-1:8000
 PAPERLESS_NGX_URL=http://your-domain.whatever:port
 ```
 

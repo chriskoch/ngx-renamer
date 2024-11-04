@@ -10,7 +10,7 @@ load_dotenv()
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-ai = OpenAITitles(openai_api_key)
+ai = OpenAITitles(openai_api_key, "/usr/src/ngx-renamer/settings.yaml")
 
 
 def main():
