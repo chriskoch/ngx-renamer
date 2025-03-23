@@ -1,3 +1,5 @@
+⚠️ The current prompt is not working anymore. This is currently **not for production** use!. I will create a version including ollama support but it will take longer ⚠️
+
 # Rename titles in Paperless NGX using OpenAI
 
 This is a Paperless NGX post consumption script.More information under this link : https://docs.paperless-ngx.com/advanced_usage/#consume-hooks.
