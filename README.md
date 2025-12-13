@@ -53,7 +53,7 @@ Add to your `docker-compose.env` file:
 ```bash
 OPENAI_API_KEY=sk-your-openai-api-key-here
 PAPERLESS_NGX_API_KEY=your-paperless-api-token-here
-PAPERLESS_NGX_URL=http://webserver:8000
+PAPERLESS_NGX_URL=http://webserver:8000/api
 ```
 
 > **Note:** Get your OpenAI API key from https://platform.openai.com/settings/organization/api-keys
@@ -150,7 +150,7 @@ webserver:
     # Add these environment variables:
     PAPERLESS_POST_CONSUME_SCRIPT: python3 /usr/local/bin/ngx-renamer.py
     OPENAI_API_KEY: ${OPENAI_API_KEY}
-    PAPERLESS_NGX_URL: http://webserver:8000
+    PAPERLESS_NGX_URL: http://webserver:8000/api
     PAPERLESS_NGX_API_KEY: ${PAPERLESS_API_KEY}
     OPENAI_MODEL: gpt-4o  # Optional: defaults to gpt-4o-mini
 ```
@@ -201,7 +201,8 @@ Your settings.yaml and configuration will continue to work as-is.
 #### Issue: "Failed to get document details" or "Failed to update title"
 
 - **Verify PAPERLESS_NGX_URL:** Must be accessible from inside the container
-  - Use `http://webserver:8000` (service name), NOT `http://localhost:8000`
+  - Use `http://webserver:8000/api` (service name with /api), NOT `http://localhost:8000/api`
+  - MUST include `/api` at the end
 - **Check API key:** Verify your Paperless API token is correct
 - **Test connectivity:** `docker compose exec webserver curl http://webserver:8000/api/`
 
