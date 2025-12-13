@@ -21,4 +21,4 @@ fi
 
 # Start normal Paperless entrypoint with all original arguments
 echo "[ngx-renamer] Starting Paperless NGX..."
-exec /sbin/docker-entrypoint.sh "$@"
+exec /init "$@"
