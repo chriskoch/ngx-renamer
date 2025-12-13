@@ -8,3 +8,4 @@ docker-compose.env
 docker-compose.yml
 ngx-renamer.code-workspace
 .claude/
+.claude/settings.local.json
