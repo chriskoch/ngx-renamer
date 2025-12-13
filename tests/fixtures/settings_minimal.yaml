@@ -1,0 +1,9 @@
+# Minimal valid settings
+openai_model: "gpt-4o-mini"
+with_date: false
+prompt:
+  main: "Generate a short title for this text:\n"
+  with_date: ""
+  no_date: ""
+  pre_content: ""
+  post_content: ""

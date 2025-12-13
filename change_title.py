@@ -10,7 +10,14 @@ def main():
     document_id=os.environ.get('DOCUMENT_ID')
     run_dir=os.environ.get('RUN_DIR')
 
-    load_dotenv()
+    # Try to load .env file if it exists (backward compatibility)
+    # If .env doesn't exist, environment variables from docker-compose will be used
+    env_file_path = f"{run_dir}/.env" if run_dir else ".env"
+    if os.path.exists(env_file_path):
+        load_dotenv(env_file_path)
+    else:
+        # .env file not found, will use environment variables directly
+        load_dotenv()  # This will still check current directory
 
     paperless_url = os.getenv("PAPERLESS_NGX_URL")
     paperless_api_key = os.getenv("PAPERLESS_NGX_API_KEY")

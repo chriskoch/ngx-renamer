@@ -2,3 +2,8 @@
 .env
 .vscode/launch.json
 __pycache__/
+venv/
+paperless_dev/
+docker-compose.env
+docker-compose.yml
+ngx-renamer.code-workspace

@@ -1,5 +1,5 @@
 requests
 python-dotenv
-openai
+openai>=1.59.0
 pyyaml
 pdfplumber
