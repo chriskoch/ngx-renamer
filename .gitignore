@@ -7,3 +7,4 @@ paperless_dev/
 docker-compose.env
 docker-compose.yml
 ngx-renamer.code-workspace
+.claude/
