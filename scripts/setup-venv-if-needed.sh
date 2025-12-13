@@ -10,8 +10,8 @@ REQUIREMENTS_FILE="$SOURCE_PATH/requirements.txt"
 
 echo "[ngx-renamer] Setting up Python virtual environment at $VENV_PATH..."
 
-# Create venv if it doesn't exist
-if [ ! -d "$VENV_PATH" ]; then
+# Create venv if it doesn't exist (check for activate script, not just directory)
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
     echo "[ngx-renamer] Creating new virtual environment..."
     python3 -m venv "$VENV_PATH"
 else
