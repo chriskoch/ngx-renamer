@@ -5,7 +5,7 @@
 # ============================================================================
 # Choose which LLM provider to use: "openai" or "ollama"
 # Make sure to configure the corresponding API keys/URLs in your .env file
-llm_provider: "openai"  # options: "openai" or "ollama"
+llm_provider: "ollama"  # options: "openai" or "ollama"
 
 # ============================================================================
 # Common Settings (applies to all providers)
