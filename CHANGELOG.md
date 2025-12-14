@@ -6,6 +6,56 @@ All notable changes to ngx-renamer will be documented in this file.
 
 ### Added
 
+#### Multi-LLM Provider Support (2024-12-15)
+- **Ollama Integration**: Full support for local Ollama models
+  - Privacy-focused: all processing stays on your server
+  - Cost-free: no API charges for local models
+  - Offline capable: works without internet connection
+  - Support for various open-source models (gpt-oss, llama3, mistral, etc.)
+
+- **Provider Architecture**:
+  - Factory pattern in `PaperlessAITitles` for dynamic provider selection
+  - `BaseLLMProvider` abstract class for shared functionality
+  - `OllamaTitles` provider class for Ollama API integration
+  - Unified configuration format with `llm_provider` setting
+  - Backward compatible with existing OpenAI-only configurations
+
+- **Comprehensive Test Suite** (17 new tests):
+  - `test_ollama_integration.py`: 8 tests for Ollama provider
+    - Title generation from various document types
+    - Settings loading and validation
+    - Date prefix functionality
+    - Error handling (service unavailable, model not found)
+    - Empty text edge cases
+  - `test_llm_provider_selection.py`: 9 tests for multi-provider logic
+    - Provider factory pattern verification
+    - Missing credentials error handling
+    - Invalid provider detection
+    - Backward compatibility testing
+    - Runtime provider switching
+    - Multi-provider comparison tests
+
+- **Test Infrastructure**:
+  - 4 new test fixture files for provider configurations
+  - Extended `conftest.py` with Ollama fixtures and helpers
+  - Added `ollama` pytest marker for Ollama-specific tests
+  - Updated `pytest.ini` with marker documentation
+
+- **Documentation**:
+  - Updated README.md with Ollama setup instructions
+  - Complete AGENTS.md architecture update with multi-LLM diagrams
+  - Provider selection flow documentation
+  - Docker networking guide for Ollama
+  - Troubleshooting section for Ollama connectivity
+
+- **Configuration Flexibility**:
+  - Simple provider switching via `llm_provider` setting in settings.yaml
+  - Provider-specific configuration sections (openai.model, ollama.model)
+  - Shared prompt templates across all providers
+  - Environment variable support for both providers
+
+### Added
+
 #### Convenient Docker Installation Methods
 - **Auto-Init Method (Recommended)**: Fully automated installation with zero manual setup
   - Automatic Python virtual environment initialization on container start
@@ -120,7 +170,14 @@ All notable changes to ngx-renamer will be documented in this file.
 - `requirements.txt` - Updated dependencies
 - `docker-compose.yml` - Example configuration (not committed)
 
-### Statistics
+### Statistics (Multi-LLM Update)
+- **New Test Files**: 2 files, 17 tests, 100% passing
+- **New Fixtures**: 4 YAML configuration files
+- **Modified Files**: 4 (AGENTS.md, README.md, pytest.ini, conftest.py)
+- **Test Coverage**: OpenAI (6/6), Ollama (8/8), Multi-provider (9/9)
+- **Lines Added**: ~800 lines (tests + documentation)
+
+### Previous Statistics
 - **Total Changes**: 28 files changed
 - **Additions**: +1,292 lines
 - **Deletions**: -126 lines
@@ -129,7 +186,12 @@ All notable changes to ngx-renamer will be documented in this file.
 ## Breaking Changes
 
 ### None - Fully Backward Compatible
-All changes are backward compatible. Existing installations continue to work with the manual setup method. Users can migrate to the new auto-init method at their convenience.
+All changes are backward compatible:
+- Multi-LLM support defaults to OpenAI if `llm_provider` is not specified
+- Existing OpenAI configurations continue to work without modification
+- Legacy `openai_model` setting still supported (deprecated but functional)
+- Existing installations continue to work with the manual setup method
+- Users can migrate to the new auto-init method at their convenience
 
 ## Migration Guide
 
@@ -178,7 +240,9 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 
 ## Credits
 
-Implementation and testing by Claude Code with human oversight.
+Multi-LLM implementation (2024-12-15): Architecture, testing, and documentation by Claude Code with human oversight.
+
+Original implementation and Docker setup: Claude Code with human oversight.
 
 ---
 

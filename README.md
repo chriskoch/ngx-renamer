@@ -1,6 +1,6 @@
 # ngx-renamer
 
-AI-powered document title generator for Paperless NGX using OpenAI's GPT models.
+AI-powered document title generator for Paperless NGX supporting multiple LLM providers (OpenAI, Ollama).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -8,7 +8,7 @@ AI-powered document title generator for Paperless NGX using OpenAI's GPT models.
 
 ## Overview
 
-ngx-renamer is a Paperless NGX [post-consumption hook](https://docs.paperless-ngx.com/advanced_usage/#consume-hooks) that automatically generates intelligent, descriptive titles for your documents using OpenAI's GPT models. When Paperless NGX consumes a new document, this script analyzes the OCR-extracted text and creates a meaningful title instead of generic filenames.
+ngx-renamer is a Paperless NGX [post-consumption hook](https://docs.paperless-ngx.com/advanced_usage/#consume-hooks) that automatically generates intelligent, descriptive titles for your documents using AI language models. It supports both cloud-based OpenAI GPT models and local Ollama models for privacy-focused deployments. When Paperless NGX consumes a new document, this script analyzes the OCR-extracted text and creates a meaningful title instead of generic filenames.
 
 **Example transformations**:
 - `scan_2024_03_15.pdf` → `Amazon - Monthly Prime Subscription Invoice`
@@ -17,18 +17,21 @@ ngx-renamer is a Paperless NGX [post-consumption hook](https://docs.paperless-ng
 
 ### Features
 
+✅ **Multiple LLM Providers** - OpenAI (cloud) or Ollama (local/private)
 ✅ **Zero-Setup Installation** - Automatic venv initialization, no manual commands
 ✅ **Persistent Configuration** - Survives container restarts and rebuilds
 ✅ **Smart Title Generation** - Context-aware titles in the document's language
 ✅ **Configurable Prompts** - Customize title format via YAML settings
 ✅ **Dual Installation Methods** - Full-featured or ultra-minimal single-file
-✅ **Comprehensive Testing** - Full integration test suite included
+✅ **Comprehensive Testing** - Full integration test suite for all providers
 ✅ **Production Ready** - Handles errors, retries, and edge cases
 
 ### Requirements
 
 - Paperless NGX running in Docker
-- OpenAI API account ([Get one here](https://platform.openai.com/signup))
+- **Either**:
+  - OpenAI API account ([Get one here](https://platform.openai.com/signup)), **or**
+  - Local Ollama installation ([Install here](https://ollama.ai))
 - Paperless NGX API token (from your user profile)
 
 ## Table of Contents
@@ -589,8 +592,14 @@ For automated testing with full coverage:
 
 # Run specific test categories
 (.venv)$ pytest -m smoke        # Critical smoke tests
-(.venv)$ pytest -m integration  # Integration tests
-(.venv)$ pytest -m openai       # OpenAI API tests (requires key)
+(.venv)$ pytest -m integration  # All integration tests
+(.venv)$ pytest -m openai       # OpenAI API tests (requires API key, costs money)
+(.venv)$ pytest -m ollama       # Ollama API tests (requires Ollama running)
+
+# Test specific providers
+(.venv)$ pytest tests/integration/test_openai_integration.py
+(.venv)$ pytest tests/integration/test_ollama_integration.py
+(.venv)$ pytest tests/integration/test_llm_provider_selection.py
 
 # With coverage report
 (.venv)$ pytest --cov=modules --cov-report=html
@@ -606,16 +615,20 @@ For detailed information about the system architecture, components, data flow, a
 
 **Key Components**:
 - **Entry Point**: `scripts/init-and-start.sh` - Container initialization
-- **Setup**: `scripts/setup-venv-if-needed.sh` - Automatic venv management  
+- **Setup**: `scripts/setup-venv-if-needed.sh` - Automatic venv management
 - **Wrapper**: `scripts/post_consume_wrapper.sh` - Post-consume hook
 - **Orchestrator**: `change_title.py` - Main workflow coordinator
-- **Paperless Agent**: `modules/paperless_ai_titles.py` - API integration
-- **OpenAI Agent**: `modules/openai_titles.py` - Title generation
+- **Paperless Agent**: `modules/paperless_ai_titles.py` - API integration & provider selection
+- **LLM Providers**:
+  - `modules/openai_titles.py` - OpenAI integration
+  - `modules/ollama_titles.py` - Ollama integration
+  - `modules/base_llm_provider.py` - Shared base class
 
 **Data Flow**:
 ```
 Document Upload → Paperless OCR → Post-Consume Hook →
-ngx-renamer → Paperless API (fetch) → OpenAI API (generate) →
+ngx-renamer → Paperless API (fetch) →
+Provider Selection (OpenAI or Ollama) → LLM API (generate) →
 Paperless API (update) → Document with AI Title
 ```
 
@@ -655,7 +668,7 @@ MIT License - see LICENSE file for details.
 ## Acknowledgments
 
 - Built for [Paperless NGX](https://github.com/paperless-ngx/paperless-ngx)
-- Powered by [OpenAI](https://openai.com/)
+- LLM Support: [OpenAI](https://openai.com/) and [Ollama](https://ollama.ai)
 - Developed with [Claude Code](https://claude.com/claude-code)
 
 ---
