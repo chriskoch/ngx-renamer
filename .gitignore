@@ -1,10 +1,30 @@
+# macOS
 .DS_Store
+
+# Environment and secrets
 .env
+
+# IDE
 .vscode/launch.json
+ngx-renamer.code-workspace
+
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Development
 paperless_dev/
 docker-compose.env
 docker-compose.yml
-ngx-renamer.code-workspace
+
+# Claude Code
 .claude/

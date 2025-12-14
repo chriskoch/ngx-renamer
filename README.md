@@ -1,7 +1,51 @@
-# Rename titles in Paperless NGX using OpenAI
+# ngx-renamer
 
-This is a Paperless NGX post consumption script.More information under this link : https://docs.paperless-ngx.com/advanced_usage/#consume-hooks.
-You need an OpenAI API account to run it.
+AI-powered document title generator for Paperless NGX supporting multiple LLM providers (OpenAI, Ollama).
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-compose-blue.svg)](https://docs.docker.com/compose/)
+
+## Overview
+
+ngx-renamer is a Paperless NGX [post-consumption hook](https://docs.paperless-ngx.com/advanced_usage/#consume-hooks) that automatically generates intelligent, descriptive titles for your documents using AI language models. It supports both cloud-based OpenAI GPT models and local Ollama models for privacy-focused deployments. When Paperless NGX consumes a new document, this script analyzes the OCR-extracted text and creates a meaningful title instead of generic filenames.
+
+**Example transformations**:
+- `scan_2024_03_15.pdf` → `Amazon - Monthly Prime Subscription Invoice`
+- `IMG_2043.pdf` → `Deutsche Bank - Account Statement March 2024`
+- `document.pdf` → `Versicherung - Änderungen AVB DKV 2026`
+
+### Features
+
+✅ **Multiple LLM Providers** - OpenAI (cloud) or Ollama (local/private)
+✅ **Zero-Setup Installation** - Automatic venv initialization, no manual commands
+✅ **Persistent Configuration** - Survives container restarts and rebuilds
+✅ **Smart Title Generation** - Context-aware titles in the document's language
+✅ **Configurable Prompts** - Customize title format via YAML settings
+✅ **Dual Installation Methods** - Full-featured or ultra-minimal single-file
+✅ **Comprehensive Testing** - Full integration test suite for all providers
+✅ **Production Ready** - Handles errors, retries, and edge cases
+
+### Requirements
+
+- Paperless NGX running in Docker
+- **Either**:
+  - OpenAI API account ([Get one here](https://platform.openai.com/signup)), **or**
+  - Local Ollama installation ([Install here](https://ollama.ai))
+- Paperless NGX API token (from your user profile)
+
+## Table of Contents
+
+- [Installation](#installation-in-paperless-ngx)
+  - [Method 1: Auto-Init (Recommended)](#method-1-auto-init-installation-recommended)
+  - [Method 2: Standalone Single-File](#method-2-standalone-single-file-installation)
+  - [Migration Guide](#migration-from-old-installation-method)
+- [Configuration](#the-settings)
+- [Troubleshooting](#troubleshooting)
+- [Development](#python-development-and-testing)
+- [Architecture](#architecture)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Installation in Paperless NGX
 
@@ -240,6 +284,218 @@ Method 2: Edit environment variables in docker-compose.yml, then `docker compose
 
 ---
 
+## LLM Provider Configuration
+
+ngx-renamer supports **two LLM providers** for generating document titles:
+
+1. **OpenAI** (default) - Cloud-based, requires API key
+2. **Ollama** - Local/self-hosted, free and private
+
+### Choosing Your Provider
+
+Provider selection is configured in `settings.yaml`:
+
+```yaml
+# Choose your LLM provider
+llm_provider: "openai"  # options: "openai" or "ollama"
+```
+
+---
+
+### Option 1: OpenAI (Default)
+
+**Pros:**
+- High-quality title generation
+- Fast response times
+- No local setup required
+
+**Cons:**
+- Requires API key and incurs costs
+- Data sent to OpenAI servers
+
+**Setup:**
+
+1. Get your API key from https://platform.openai.com/settings/organization/api-keys
+2. Configure in `.env`:
+   ```bash
+   OPENAI_API_KEY=sk-your-openai-api-key-here
+   ```
+3. Set in `settings.yaml`:
+   ```yaml
+   llm_provider: "openai"
+   openai:
+     model: "gpt-4o"  # or "gpt-4o-mini" for lower cost
+   ```
+
+---
+
+### Option 2: Ollama (Local/Self-Hosted)
+
+**Pros:**
+- Completely free
+- Private - data stays on your server
+- No API key required
+- Works offline
+
+**Cons:**
+- Requires local Ollama installation
+- Needs sufficient hardware (CPU/GPU)
+- May be slower than OpenAI
+
+**Setup:**
+
+#### Step 1: Install Ollama
+
+**On your host machine** (where Docker runs):
+
+- **macOS/Linux:**
+  ```bash
+  curl -fsSL https://ollama.ai/install.sh | sh
+  ```
+
+- **Windows:**
+  Download from https://ollama.ai/download
+
+- **Verify installation:**
+  ```bash
+  ollama --version
+  ```
+
+#### Step 2: Pull the Model
+
+```bash
+# Pull the gpt-oss model (or any other model you prefer)
+ollama pull gpt-oss:latest
+
+# Alternative models:
+# ollama pull llama3:latest
+# ollama pull mistral:latest
+# ollama pull qwen2.5:latest
+```
+
+#### Step 3: Start Ollama Server
+
+```bash
+# The server usually starts automatically, but you can start it manually:
+ollama serve
+```
+
+**Verify Ollama is running:**
+```bash
+curl http://localhost:11434/api/version
+```
+
+#### Step 4: Configure ngx-renamer
+
+1. **Update `.env`:**
+
+   For local development:
+   ```bash
+   OLLAMA_BASE_URL=http://localhost:11434
+   ```
+
+   For Docker on Mac/Windows:
+   ```bash
+   OLLAMA_BASE_URL=http://host.docker.internal:11434
+   ```
+
+   For Docker on Linux:
+   ```bash
+   OLLAMA_BASE_URL=http://172.17.0.1:11434
+   ```
+
+2. **Update `settings.yaml`:**
+   ```yaml
+   llm_provider: "ollama"
+   ollama:
+     model: "gpt-oss:latest"  # or whichever model you pulled
+   ```
+
+3. **Restart Paperless:**
+   ```bash
+   docker compose restart webserver
+   ```
+
+---
+
+### Switching Between Providers
+
+You can easily switch between OpenAI and Ollama:
+
+1. Edit `settings.yaml` and change `llm_provider`
+2. **No restart needed** - changes apply to the next document
+
+**Example:**
+```yaml
+# Switch to Ollama
+llm_provider: "ollama"
+
+# Switch back to OpenAI
+llm_provider: "openai"
+```
+
+---
+
+### Docker Networking for Ollama
+
+When running Paperless in Docker and Ollama on the host, you need the correct URL:
+
+| Platform | OLLAMA_BASE_URL |
+|----------|-----------------|
+| **macOS** | `http://host.docker.internal:11434` |
+| **Windows** | `http://host.docker.internal:11434` |
+| **Linux** | `http://172.17.0.1:11434` |
+| **Ollama in Docker** | `http://ollama:11434` (if in same docker-compose) |
+
+**Test connectivity from container:**
+```bash
+docker compose exec webserver curl http://host.docker.internal:11434/api/version
+```
+
+---
+
+### Troubleshooting Ollama
+
+#### Issue: "Cannot connect to Ollama"
+
+**Solution:**
+1. Check Ollama is running: `curl http://localhost:11434/api/version`
+2. Start if needed: `ollama serve`
+3. Verify correct OLLAMA_BASE_URL for your platform (see table above)
+4. Check Docker networking (try `host.docker.internal` on Mac/Windows)
+
+#### Issue: "Model not found"
+
+**Solution:**
+```bash
+# Pull the model first
+ollama pull gpt-oss:latest
+
+# List available models
+ollama list
+```
+
+#### Issue: Slow performance
+
+**Solution:**
+- Use a smaller model (e.g., `llama3:8b` instead of `llama3:70b`)
+- Ensure sufficient RAM/VRAM
+- Consider using OpenAI for better speed
+
+#### Issue: Error during title generation
+
+**Check logs:**
+```bash
+docker compose logs webserver | grep -i ollama
+```
+
+**Common fixes:**
+- Ensure model is pulled: `ollama list`
+- Restart Ollama: `ollama serve`
+- Check firewall isn't blocking port 11434
+
+---
+
 ## The settings
 
 You may edit `settings.yaml` to edit the prompt and with that the results.
@@ -321,3 +577,103 @@ $ source .venv/bin/activate
 ```bash
 # read the content from a OCR'ed pdf file
 (.venv)$ python3 ./test_pdf.py path/to/your/ocr-ed/pdf/file
+```
+
+### Run the test suite
+
+For automated testing with full coverage:
+
+```bash
+# Install dev dependencies
+(.venv)$ pip install -r requirements-dev.txt
+
+# Run all tests
+(.venv)$ pytest tests/
+
+# Run specific test categories
+(.venv)$ pytest -m smoke        # Critical smoke tests
+(.venv)$ pytest -m integration  # All integration tests
+(.venv)$ pytest -m openai       # OpenAI API tests (requires API key, costs money)
+(.venv)$ pytest -m ollama       # Ollama API tests (requires Ollama running)
+
+# Test specific providers
+(.venv)$ pytest tests/integration/test_openai_integration.py
+(.venv)$ pytest tests/integration/test_ollama_integration.py
+(.venv)$ pytest tests/integration/test_llm_provider_selection.py
+
+# With coverage report
+(.venv)$ pytest --cov=modules --cov-report=html
+```
+
+See [examples/README.md](examples/README.md) for standalone testing scripts.
+
+---
+
+## Architecture
+
+For detailed information about the system architecture, components, data flow, and security considerations, see [AGENTS.md](AGENTS.md).
+
+**Key Components**:
+- **Entry Point**: `scripts/init-and-start.sh` - Container initialization
+- **Setup**: `scripts/setup-venv-if-needed.sh` - Automatic venv management
+- **Wrapper**: `scripts/post_consume_wrapper.sh` - Post-consume hook
+- **Orchestrator**: `change_title.py` - Main workflow coordinator
+- **Paperless Agent**: `modules/paperless_ai_titles.py` - API integration & provider selection
+- **LLM Providers**:
+  - `modules/openai_titles.py` - OpenAI integration
+  - `modules/ollama_titles.py` - Ollama integration
+  - `modules/base_llm_provider.py` - Shared base class
+
+**Data Flow**:
+```
+Document Upload → Paperless OCR → Post-Consume Hook →
+ngx-renamer → Paperless API (fetch) →
+Provider Selection (OpenAI or Ollama) → LLM API (generate) →
+Paperless API (update) → Document with AI Title
+```
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+### Development Setup
+
+1. Clone the repository
+2. Create a virtual environment: `python3 -m venv .venv`
+3. Install dependencies: `pip install -r requirements.txt requirements-dev.txt`
+4. Run tests: `pytest tests/`
+
+### Reporting Issues
+
+When reporting issues, please include:
+- Paperless NGX version
+- Docker/docker-compose version
+- Error messages from logs
+- Steps to reproduce
+
+### Recent Changes
+
+See [CHANGELOG.md](CHANGELOG.md) for recent changes and development history.
+
+---
+
+## License
+
+MIT License - see LICENSE file for details.
+
+---
+
+## Acknowledgments
+
+- Built for [Paperless NGX](https://github.com/paperless-ngx/paperless-ngx)
+- LLM Support: [OpenAI](https://openai.com/) and [Ollama](https://ollama.ai)
+- Developed with [Claude Code](https://claude.com/claude-code)
+
+---
+
+**Questions or Issues?** 
+- Check the [Troubleshooting](#troubleshooting) section
+- Review [AGENTS.md](AGENTS.md) for architecture details
+- Open an issue on GitHub

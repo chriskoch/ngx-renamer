@@ -14,3 +14,6 @@ pytest-timeout>=2.2.0      # Timeout support for tests
 
 # Coverage (optional but recommended)
 pytest-cov>=4.1.0          # Code coverage reporting
+
+# Version management
+bump2version>=1.0.1        # Semantic version management
