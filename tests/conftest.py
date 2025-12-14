@@ -64,6 +64,30 @@ def settings_invalid_path(fixtures_dir):
 
 
 @pytest.fixture
+def settings_ollama_path(fixtures_dir):
+    """Path to Ollama provider settings fixture."""
+    return fixtures_dir / "settings_ollama.yaml"
+
+
+@pytest.fixture
+def settings_ollama_with_date_path(fixtures_dir):
+    """Path to Ollama settings with date=true fixture."""
+    return fixtures_dir / "settings_ollama_with_date.yaml"
+
+
+@pytest.fixture
+def settings_openai_new_format_path(fixtures_dir):
+    """Path to OpenAI settings using new llm_provider format."""
+    return fixtures_dir / "settings_openai_new_format.yaml"
+
+
+@pytest.fixture
+def settings_invalid_provider_path(fixtures_dir):
+    """Path to settings with invalid provider."""
+    return fixtures_dir / "settings_invalid_provider.yaml"
+
+
+@pytest.fixture
 def settings_valid(settings_valid_path):
     """Load and return valid settings as dict."""
     with open(settings_valid_path, 'r') as f:
@@ -85,6 +109,19 @@ def openai_api_key():
     if not key:
         pytest.skip("OPENAI_API_KEY not set - skipping OpenAI integration test")
     return key
+
+
+@pytest.fixture
+def ollama_base_url():
+    """
+    Get Ollama base URL from environment.
+
+    Tests marked with @pytest.mark.ollama will skip if URL is not set.
+    Defaults to http://localhost:11434 if not specified.
+    """
+    url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    # Note: We don't skip here, we'll let individual tests verify if Ollama is actually running
+    return url
 
 
 @pytest.fixture

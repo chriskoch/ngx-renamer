@@ -1,0 +1,23 @@
+# Settings for Ollama provider with date enabled
+llm_provider: "ollama"
+with_date: true
+
+ollama:
+  model: "gpt-oss:latest"
+
+prompt:
+  main: |
+    You are a document title generator. Generate a concise title (50-100 chars).
+    Format: "Sender - Brief Description"
+    Output only the title, nothing else.
+
+    Document text:
+
+  with_date: |
+
+    Extract the document date and prefix with YYYY-MM-DD format.
+    If no date found, use {current_date}.
+
+  no_date: ""
+  pre_content: ""
+  post_content: ""

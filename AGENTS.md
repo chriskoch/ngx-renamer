@@ -2,7 +2,7 @@
 
 ## Overview
 
-ngx-renamer is an AI-powered document title generator for Paperless NGX that automatically renames documents using OpenAI's GPT models. This document describes the architecture, components, and data flow.
+ngx-renamer is an AI-powered document title generator for Paperless NGX that automatically renames documents using AI language models. It supports multiple LLM providers including OpenAI GPT models and local Ollama models. This document describes the architecture, components, and data flow.
 
 ## System Architecture
 
@@ -49,23 +49,29 @@ ngx-renamer is an AI-powered document title generator for Paperless NGX that aut
 │                            │                                      │
 │                            ▼                                      │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │  4. PaperlessAITitles Agent                                │ │
+│  │  4. PaperlessAITitles Agent (Orchestrator)                │ │
 │  │     - Fetches document via Paperless API                   │ │
 │  │     - Extracts OCR content                                 │ │
-│  │     - Delegates to OpenAI agent                            │ │
+│  │     - Selects LLM provider (OpenAI or Ollama)              │ │
+│  │     - Delegates to provider agent                          │ │
 │  │     - Updates document title via Paperless API             │ │
 │  └────────────────────────────────────────────────────────────┘ │
 │                            │                                      │
 └────────────────────────────┼──────────────────────────────────────┘
                              │
-                             ▼
-              ┌──────────────────────────────┐
-              │     OpenAI API               │
-              │  - Receives document text    │
-              │  - Applies prompt template   │
-              │  - Generates optimized title │
-              │  - Returns result            │
-              └──────────────────────────────┘
+                    ┌────────┴────────┐
+                    ▼                 ▼
+       ┌─────────────────────┐  ┌──────────────────────┐
+       │   OpenAI Provider   │  │   Ollama Provider    │
+       │  - GPT-4o           │  │  - Local models      │
+       │  - GPT-4o-mini      │  │  - gpt-oss:latest    │
+       │  - Cloud API        │  │  - No API costs      │
+       └─────────────────────┘  └──────────────────────┘
+                │                         │
+                └────────┬────────────────┘
+                         ▼
+              Generates optimized title
+              Returns to PaperlessAITitles
 ```
 
 ## Core Components
@@ -161,9 +167,24 @@ def main():
 ### 4. Paperless Integration Agent
 
 #### `modules/paperless_ai_titles.py`
-**Purpose**: Handles all interactions with Paperless NGX API.
+**Purpose**: Orchestrator that handles Paperless NGX API interactions and LLM provider selection.
+
+**Architecture**: Factory pattern for provider selection based on configuration.
 
 **Key Methods**:
+
+##### `_create_llm_provider()`
+**Factory method** that instantiates the appropriate LLM provider:
+```python
+provider = settings.get("llm_provider", "openai").lower()
+
+if provider == "openai":
+    return OpenAITitles(openai_api_key, settings_file)
+elif provider == "ollama":
+    return OllamaTitles(ollama_base_url, settings_file)
+else:
+    raise ValueError(f"Unknown LLM provider '{provider}'")
+```
 
 ##### `__get_document_details(document_id)`
 ```python
@@ -197,17 +218,58 @@ Body: {
 4. Update document with new title
 5. Handle errors at each step
 
-### 5. OpenAI Integration Agent
+### 5. LLM Provider Agents
 
-#### `modules/openai_titles.py`
+All providers inherit from `BaseLLMProvider` which provides common functionality:
+- Settings loading from YAML
+- Prompt building with date handling
+- Shared configuration structure
+
+#### `modules/openai_titles.py` - OpenAI Provider
 **Purpose**: Handles all interactions with OpenAI API and prompt engineering.
 
 **Key Methods**:
 
-##### `__load_settings(settings_file)`
-Loads YAML configuration:
+#### `modules/ollama_titles.py` - Ollama Provider
+**Purpose**: Handles interactions with local Ollama API for on-premise/offline title generation.
+
+**Key Features**:
+- No API costs (runs locally)
+- Privacy-focused (no data leaves your network)
+- Support for various open-source models
+- Same prompt structure as OpenAI
+
+**Key Methods**:
+
+##### `__call_ollama_api(content, role="user")`
+```python
+ollama.Client(host=ollama_base_url).chat(
+    model="gpt-oss:latest",
+    messages=[{"role": "user", "content": prompt}]
+)
+```
+
+**Error Handling**:
+- Model not found → Suggests `ollama pull` command
+- Service unavailable → Returns None gracefully
+- Connection errors → Logged with helpful debug info
+
+### 6. Shared Configuration
+
+##### Settings File Structure (`settings.yaml`)
+Supports both providers with unified configuration:
 ```yaml
-openai_model: "gpt-4o"
+# Provider Selection
+llm_provider: "ollama"  # or "openai"
+
+# Provider-specific settings
+openai:
+  model: "gpt-4o"
+
+ollama:
+  model: "gpt-oss:latest"
+
+# Shared settings
 with_date: false
 prompt:
   main: "System instruction for title generation..."
@@ -262,13 +324,14 @@ OpenAI.chat.completions.create(
 5. change_title.py instantiates PaperlessAITitles
    ↓
 6. PaperlessAITitles.generate_and_update_title(123)
-   ├─ 6a. GET /api/documents/123/ (fetch document)
-   ├─ 6b. Extract content: "OCR text..."
-   ├─ 6c. OpenAITitles.generate_title_from_text("OCR text...")
+   ├─ 6a. Load settings and select provider (OpenAI or Ollama)
+   ├─ 6b. GET /api/documents/123/ (fetch document)
+   ├─ 6c. Extract content: "OCR text..."
+   ├─ 6d. LLMProvider.generate_title_from_text("OCR text...")
    │      ├─ Build prompt from settings
-   │      ├─ Call OpenAI API
+   │      ├─ Call LLM API (OpenAI or Ollama)
    │      └─ Return: "Amazon - Monthly Subscription Invoice"
-   └─ 6d. PATCH /api/documents/123/ (update title)
+   └─ 6e. PATCH /api/documents/123/ (update title)
    ↓
 7. Paperless saves document with new AI-generated title
 ```
@@ -328,23 +391,41 @@ Each layer handles errors independently:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DOCUMENT_ID` | Yes | - | Provided by Paperless automatically |
-| `OPENAI_API_KEY` | Yes | - | OpenAI API key |
+| `OPENAI_API_KEY` | Conditional | - | Required if using OpenAI provider |
+| `OLLAMA_BASE_URL` | Conditional | `http://localhost:11434` | Required if using Ollama provider |
 | `PAPERLESS_NGX_API_KEY` | Yes | - | Paperless API token |
 | `PAPERLESS_NGX_URL` | Yes | - | Paperless API URL (must include `/api`) |
-| `OPENAI_MODEL` | No | `gpt-4o-mini` | OpenAI model to use |
+| `OPENAI_MODEL` | No | `gpt-4o-mini` | OpenAI model to use (deprecated, use settings.yaml) |
 | `TITLE_WITH_DATE` | No | `false` | Include date in title |
 | `RUN_DIR` | No | - | Script runtime directory |
 
 ### Settings File (settings.yaml)
 
 ```yaml
-# Model selection
-openai_model: "gpt-4o"
+# ============================================================================
+# LLM Provider Configuration
+# ============================================================================
+# Choose which LLM provider to use: "openai" or "ollama"
+llm_provider: "ollama"  # options: "openai" or "ollama"
 
-# Date handling
-with_date: false
+# ============================================================================
+# OpenAI-specific Configuration
+# ============================================================================
+openai:
+  model: "gpt-4o"  # OpenAI model to use
 
-# Prompt engineering
+# ============================================================================
+# Ollama-specific Configuration
+# ============================================================================
+ollama:
+  model: "gpt-oss:latest"  # Ollama model (must be pulled first)
+
+# ============================================================================
+# Shared Configuration
+# ============================================================================
+with_date: false  # Include date prefix in title
+
+# Prompt engineering (shared by all providers)
 prompt:
   main: |
     System instructions for title generation
@@ -355,6 +436,11 @@ prompt:
     Additional instructions for date extraction
 
   no_date: ""
+
+# ============================================================================
+# Legacy Configuration (backward compatibility)
+# ============================================================================
+openai_model: "gpt-4o"  # Deprecated: Use openai.model instead
 ```
 
 ## Testing
@@ -366,21 +452,42 @@ tests/
 ├── conftest.py              # Fixtures and configuration
 ├── fixtures/                # Test data
 │   ├── settings_valid.yaml
-│   ├── settings_invalid.yaml
+│   ├── settings_ollama.yaml
+│   ├── settings_openai_new_format.yaml
+│   ├── settings_invalid_provider.yaml
 │   └── ...
 └── integration/             # Integration tests
-    ├── test_end_to_end.py           # Full workflow
-    ├── test_openai_integration.py   # OpenAI API
-    └── test_paperless_integration.py # Paperless API
+    ├── test_end_to_end.py                 # Full workflow
+    ├── test_openai_integration.py         # OpenAI API tests
+    ├── test_ollama_integration.py         # Ollama API tests
+    ├── test_llm_provider_selection.py     # Multi-provider tests
+    └── test_paperless_integration.py      # Paperless API tests
 ```
 
 ### Test Markers
 
 ```python
 @pytest.mark.integration  # Full integration test
-@pytest.mark.openai       # Real OpenAI API call
+@pytest.mark.openai       # Real OpenAI API call (requires API key, costs money)
+@pytest.mark.ollama       # Real Ollama API call (requires Ollama running locally)
 @pytest.mark.smoke        # Critical smoke test
 @pytest.mark.slow         # Slow-running test
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run only OpenAI tests (requires OPENAI_API_KEY)
+pytest -m openai
+
+# Run only Ollama tests (requires Ollama running)
+OLLAMA_BASE_URL=http://localhost:11434 pytest -m ollama
+
+# Run provider selection tests (no API calls)
+pytest tests/integration/test_llm_provider_selection.py::TestLLMProviderSelection
 ```
 
 ## Security Considerations
@@ -423,10 +530,13 @@ See [README.md Troubleshooting Section](README.md#troubleshooting) for common is
 
 ## Future Enhancements
 
+Completed:
+- [x] Multiple AI provider support (OpenAI, Ollama) ✅ 2024-12-15
+
 Potential improvements:
 - [ ] Batch processing for existing documents
 - [ ] Custom prompt templates per document type
-- [ ] Multiple AI provider support (Claude, Gemini)
+- [ ] Additional providers (Claude, Gemini, local models)
 - [ ] Title quality scoring and validation
 - [ ] Automatic language detection
 - [ ] Title history and rollback
@@ -439,6 +549,16 @@ See [CHANGELOG.md](CHANGELOG.md) for recent changes and development history.
 
 ---
 
-**Last Updated**: 2025-12-14
-**Version**: Dev Branch
+**Last Updated**: 2024-12-15
+**Version**: Dev Branch (Multi-LLM Support)
 **Maintained by**: Claude Code with human oversight
+
+## Recent Changes
+
+### 2024-12-15: Multi-LLM Provider Support
+- Added Ollama provider for local/offline title generation
+- Implemented provider factory pattern in PaperlessAITitles
+- Created BaseLLMProvider abstract class for shared functionality
+- Added comprehensive test suite for multi-provider support
+- Updated configuration format with `llm_provider` setting
+- Backward compatible with existing OpenAI-only configurations
