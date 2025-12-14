@@ -240,6 +240,218 @@ Method 2: Edit environment variables in docker-compose.yml, then `docker compose
 
 ---
 
+## LLM Provider Configuration
+
+ngx-renamer supports **two LLM providers** for generating document titles:
+
+1. **OpenAI** (default) - Cloud-based, requires API key
+2. **Ollama** - Local/self-hosted, free and private
+
+### Choosing Your Provider
+
+Provider selection is configured in `settings.yaml`:
+
+```yaml
+# Choose your LLM provider
+llm_provider: "openai"  # options: "openai" or "ollama"
+```
+
+---
+
+### Option 1: OpenAI (Default)
+
+**Pros:**
+- High-quality title generation
+- Fast response times
+- No local setup required
+
+**Cons:**
+- Requires API key and incurs costs
+- Data sent to OpenAI servers
+
+**Setup:**
+
+1. Get your API key from https://platform.openai.com/settings/organization/api-keys
+2. Configure in `.env`:
+   ```bash
+   OPENAI_API_KEY=sk-your-openai-api-key-here
+   ```
+3. Set in `settings.yaml`:
+   ```yaml
+   llm_provider: "openai"
+   openai:
+     model: "gpt-4o"  # or "gpt-4o-mini" for lower cost
+   ```
+
+---
+
+### Option 2: Ollama (Local/Self-Hosted)
+
+**Pros:**
+- Completely free
+- Private - data stays on your server
+- No API key required
+- Works offline
+
+**Cons:**
+- Requires local Ollama installation
+- Needs sufficient hardware (CPU/GPU)
+- May be slower than OpenAI
+
+**Setup:**
+
+#### Step 1: Install Ollama
+
+**On your host machine** (where Docker runs):
+
+- **macOS/Linux:**
+  ```bash
+  curl -fsSL https://ollama.ai/install.sh | sh
+  ```
+
+- **Windows:**
+  Download from https://ollama.ai/download
+
+- **Verify installation:**
+  ```bash
+  ollama --version
+  ```
+
+#### Step 2: Pull the Model
+
+```bash
+# Pull the gpt-oss model (or any other model you prefer)
+ollama pull gpt-oss:latest
+
+# Alternative models:
+# ollama pull llama3:latest
+# ollama pull mistral:latest
+# ollama pull qwen2.5:latest
+```
+
+#### Step 3: Start Ollama Server
+
+```bash
+# The server usually starts automatically, but you can start it manually:
+ollama serve
+```
+
+**Verify Ollama is running:**
+```bash
+curl http://localhost:11434/api/version
+```
+
+#### Step 4: Configure ngx-renamer
+
+1. **Update `.env`:**
+
+   For local development:
+   ```bash
+   OLLAMA_BASE_URL=http://localhost:11434
+   ```
+
+   For Docker on Mac/Windows:
+   ```bash
+   OLLAMA_BASE_URL=http://host.docker.internal:11434
+   ```
+
+   For Docker on Linux:
+   ```bash
+   OLLAMA_BASE_URL=http://172.17.0.1:11434
+   ```
+
+2. **Update `settings.yaml`:**
+   ```yaml
+   llm_provider: "ollama"
+   ollama:
+     model: "gpt-oss:latest"  # or whichever model you pulled
+   ```
+
+3. **Restart Paperless:**
+   ```bash
+   docker compose restart webserver
+   ```
+
+---
+
+### Switching Between Providers
+
+You can easily switch between OpenAI and Ollama:
+
+1. Edit `settings.yaml` and change `llm_provider`
+2. **No restart needed** - changes apply to the next document
+
+**Example:**
+```yaml
+# Switch to Ollama
+llm_provider: "ollama"
+
+# Switch back to OpenAI
+llm_provider: "openai"
+```
+
+---
+
+### Docker Networking for Ollama
+
+When running Paperless in Docker and Ollama on the host, you need the correct URL:
+
+| Platform | OLLAMA_BASE_URL |
+|----------|-----------------|
+| **macOS** | `http://host.docker.internal:11434` |
+| **Windows** | `http://host.docker.internal:11434` |
+| **Linux** | `http://172.17.0.1:11434` |
+| **Ollama in Docker** | `http://ollama:11434` (if in same docker-compose) |
+
+**Test connectivity from container:**
+```bash
+docker compose exec webserver curl http://host.docker.internal:11434/api/version
+```
+
+---
+
+### Troubleshooting Ollama
+
+#### Issue: "Cannot connect to Ollama"
+
+**Solution:**
+1. Check Ollama is running: `curl http://localhost:11434/api/version`
+2. Start if needed: `ollama serve`
+3. Verify correct OLLAMA_BASE_URL for your platform (see table above)
+4. Check Docker networking (try `host.docker.internal` on Mac/Windows)
+
+#### Issue: "Model not found"
+
+**Solution:**
+```bash
+# Pull the model first
+ollama pull gpt-oss:latest
+
+# List available models
+ollama list
+```
+
+#### Issue: Slow performance
+
+**Solution:**
+- Use a smaller model (e.g., `llama3:8b` instead of `llama3:70b`)
+- Ensure sufficient RAM/VRAM
+- Consider using OpenAI for better speed
+
+#### Issue: Error during title generation
+
+**Check logs:**
+```bash
+docker compose logs webserver | grep -i ollama
+```
+
+**Common fixes:**
+- Ensure model is pulled: `ollama list`
+- Restart Ollama: `ollama serve`
+- Check firewall isn't blocking port 11434
+
+---
+
 ## The settings
 
 You may edit `settings.yaml` to edit the prompt and with that the results.

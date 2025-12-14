@@ -3,3 +3,4 @@ python-dotenv
 openai>=1.59.0
 pyyaml
 pdfplumber
+ollama>=0.4.0

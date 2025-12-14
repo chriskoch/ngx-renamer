@@ -1,7 +1,37 @@
 # This file contains the settings for the scripts in the project
-openai_model: "gpt-4o" # the model to use for the generation (upgraded from gpt-4o-mini for better quality)
-with_date: false # boolean if the title should the date as a prefix
-# the AI prompt for the generation
+
+# ============================================================================
+# LLM Provider Configuration
+# ============================================================================
+# Choose which LLM provider to use: "openai" or "ollama"
+# Make sure to configure the corresponding API keys/URLs in your .env file
+llm_provider: "openai"  # options: "openai" or "ollama"
+
+# ============================================================================
+# Common Settings (applies to all providers)
+# ============================================================================
+with_date: false  # boolean if the title should have the date as a prefix
+
+# ============================================================================
+# OpenAI-specific Configuration
+# ============================================================================
+openai:
+  model: "gpt-4o"  # OpenAI model to use (gpt-4o, gpt-4o-mini, gpt-4-turbo, etc.)
+
+# ============================================================================
+# Ollama-specific Configuration
+# ============================================================================
+ollama:
+  model: "gpt-oss:latest"  # Ollama model to use (must be pulled: ollama pull gpt-oss:latest)
+
+# ============================================================================
+# Legacy Configuration (backward compatibility - will be removed in future)
+# ============================================================================
+openai_model: "gpt-4o"  # Deprecated: Use openai.model instead
+
+# ============================================================================
+# Shared AI Prompt (used by all providers)
+# ============================================================================
 prompt:
   # Main system instruction - clear, concise, example-driven
   main: |
