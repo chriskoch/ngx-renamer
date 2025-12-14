@@ -5,7 +5,8 @@
       "Bash(source .venv/bin/activate)",
       "Bash(pip install:*)",
       "Bash(pytest:*)",
-      "Bash(git remote add:*)"
+      "Bash(git remote add:*)",
+      "Bash(docker compose logs:*)"
     ]
   }
 }

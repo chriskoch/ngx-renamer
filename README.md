@@ -1,7 +1,48 @@
-# Rename titles in Paperless NGX using OpenAI
+# ngx-renamer
 
-This is a Paperless NGX post consumption script.More information under this link : https://docs.paperless-ngx.com/advanced_usage/#consume-hooks.
-You need an OpenAI API account to run it.
+AI-powered document title generator for Paperless NGX using OpenAI's GPT models.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-compose-blue.svg)](https://docs.docker.com/compose/)
+
+## Overview
+
+ngx-renamer is a Paperless NGX [post-consumption hook](https://docs.paperless-ngx.com/advanced_usage/#consume-hooks) that automatically generates intelligent, descriptive titles for your documents using OpenAI's GPT models. When Paperless NGX consumes a new document, this script analyzes the OCR-extracted text and creates a meaningful title instead of generic filenames.
+
+**Example transformations**:
+- `scan_2024_03_15.pdf` → `Amazon - Monthly Prime Subscription Invoice`
+- `IMG_2043.pdf` → `Deutsche Bank - Account Statement March 2024`
+- `document.pdf` → `Versicherung - Änderungen AVB DKV 2026`
+
+### Features
+
+✅ **Zero-Setup Installation** - Automatic venv initialization, no manual commands
+✅ **Persistent Configuration** - Survives container restarts and rebuilds
+✅ **Smart Title Generation** - Context-aware titles in the document's language
+✅ **Configurable Prompts** - Customize title format via YAML settings
+✅ **Dual Installation Methods** - Full-featured or ultra-minimal single-file
+✅ **Comprehensive Testing** - Full integration test suite included
+✅ **Production Ready** - Handles errors, retries, and edge cases
+
+### Requirements
+
+- Paperless NGX running in Docker
+- OpenAI API account ([Get one here](https://platform.openai.com/signup))
+- Paperless NGX API token (from your user profile)
+
+## Table of Contents
+
+- [Installation](#installation-in-paperless-ngx)
+  - [Method 1: Auto-Init (Recommended)](#method-1-auto-init-installation-recommended)
+  - [Method 2: Standalone Single-File](#method-2-standalone-single-file-installation)
+  - [Migration Guide](#migration-from-old-installation-method)
+- [Configuration](#the-settings)
+- [Troubleshooting](#troubleshooting)
+- [Development](#python-development-and-testing)
+- [Architecture](#architecture)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Installation in Paperless NGX
 
@@ -533,3 +574,93 @@ $ source .venv/bin/activate
 ```bash
 # read the content from a OCR'ed pdf file
 (.venv)$ python3 ./test_pdf.py path/to/your/ocr-ed/pdf/file
+```
+
+### Run the test suite
+
+For automated testing with full coverage:
+
+```bash
+# Install dev dependencies
+(.venv)$ pip install -r requirements-dev.txt
+
+# Run all tests
+(.venv)$ pytest tests/
+
+# Run specific test categories
+(.venv)$ pytest -m smoke        # Critical smoke tests
+(.venv)$ pytest -m integration  # Integration tests
+(.venv)$ pytest -m openai       # OpenAI API tests (requires key)
+
+# With coverage report
+(.venv)$ pytest --cov=modules --cov-report=html
+```
+
+See [examples/README.md](examples/README.md) for standalone testing scripts.
+
+---
+
+## Architecture
+
+For detailed information about the system architecture, components, data flow, and security considerations, see [AGENTS.md](AGENTS.md).
+
+**Key Components**:
+- **Entry Point**: `scripts/init-and-start.sh` - Container initialization
+- **Setup**: `scripts/setup-venv-if-needed.sh` - Automatic venv management  
+- **Wrapper**: `scripts/post_consume_wrapper.sh` - Post-consume hook
+- **Orchestrator**: `change_title.py` - Main workflow coordinator
+- **Paperless Agent**: `modules/paperless_ai_titles.py` - API integration
+- **OpenAI Agent**: `modules/openai_titles.py` - Title generation
+
+**Data Flow**:
+```
+Document Upload → Paperless OCR → Post-Consume Hook →
+ngx-renamer → Paperless API (fetch) → OpenAI API (generate) →
+Paperless API (update) → Document with AI Title
+```
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+### Development Setup
+
+1. Clone the repository
+2. Create a virtual environment: `python3 -m venv .venv`
+3. Install dependencies: `pip install -r requirements.txt requirements-dev.txt`
+4. Run tests: `pytest tests/`
+
+### Reporting Issues
+
+When reporting issues, please include:
+- Paperless NGX version
+- Docker/docker-compose version
+- Error messages from logs
+- Steps to reproduce
+
+### Recent Changes
+
+See [CHANGELOG.md](CHANGELOG.md) for recent changes and development history.
+
+---
+
+## License
+
+MIT License - see LICENSE file for details.
+
+---
+
+## Acknowledgments
+
+- Built for [Paperless NGX](https://github.com/paperless-ngx/paperless-ngx)
+- Powered by [OpenAI](https://openai.com/)
+- Developed with [Claude Code](https://claude.com/claude-code)
+
+---
+
+**Questions or Issues?** 
+- Check the [Troubleshooting](#troubleshooting) section
+- Review [AGENTS.md](AGENTS.md) for architecture details
+- Open an issue on GitHub
