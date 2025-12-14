@@ -48,7 +48,7 @@ class OpenAITitles:
                 with_date_prompt = with_date_prompt.replace("{current_date}", current_date)
                 prompt += with_date_prompt
             else:
-                prompt += setting_prompt.get("without_date", "")
+                prompt += setting_prompt.get("no_date", "")
 
             prompt += setting_prompt.get("pre_content", "") + text
 

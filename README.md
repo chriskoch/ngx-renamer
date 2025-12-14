@@ -5,126 +5,240 @@ You need an OpenAI API account to run it.
 
 ## Installation in Paperless NGX
 
-**Download or checkout the source code:**
+We provide **two installation methods** - choose the one that fits your needs:
 
-* Copy the directory into your paperless docker compose directory (where the `docker-compose.yml` is located).
+1. **Auto-Init Method** (Recommended) - Fully automated, no manual setup
+2. **Standalone Single-File** (Simplest) - Ultra-minimal, one file only
+
+---
+
+### Method 1: Auto-Init Installation (Recommended)
+
+This method automatically sets up the Python environment on container start. **No manual commands needed!**
+
+#### Step 1: Copy ngx-renamer to your Paperless directory
 
 ```bash
-# It will look like this
-user@host:~/paperless$ tree . -L 2
-.
-├── consume
-├── docker-compose.env
+cd ~/paperless  # or wherever your docker-compose.yml is located
+git clone <repository-url> ngx-renamer
+```
+
+Your directory structure will look like:
+```
+~/paperless/
 ├── docker-compose.yml
-├── export
-└── ngx-renamer
+├── docker-compose.env
+├── consume/
+├── export/
+└── ngx-renamer/        # ← The cloned directory
     ├── change_title.py
-    ├── modules
-    ├── post_consume_script.sh
-    ├── README.md
-    ├── requirements.txt
+    ├── modules/
+    ├── scripts/        # ← New helper scripts
     ├── settings.yaml
-    ├── setup_venv.sh
-    ├── test_pdf.py
-    ├── test_title.py
-    ├── title_finder.py
+    └── ...
 ```
 
-**Create a `.env` file in the `ngx-renamer` directory and put your credentials in:**
+#### Step 2: Configure API credentials
+
+**Option A: Using .env file** (traditional method)
+```bash
+cd ngx-renamer
+cp .env.example .env
+nano .env  # Edit with your API keys
+```
+
+**Option B: Using docker-compose environment** (recommended for new installations)
+
+Add to your `docker-compose.env` file:
+```bash
+OPENAI_API_KEY=sk-your-openai-api-key-here
+PAPERLESS_NGX_API_KEY=your-paperless-api-token-here
+PAPERLESS_NGX_URL=http://webserver:8000/api
+```
+
+> **Note:** Get your OpenAI API key from https://platform.openai.com/settings/organization/api-keys
+>
+> Get your Paperless API token from your Paperless user profile.
+
+#### Step 3: Update docker-compose.yml
+
+Add the following to your `webserver` service:
+
+```yaml
+webserver:
+  image: ghcr.io/paperless-ngx/paperless-ngx:latest
+  restart: unless-stopped
+  depends_on:
+    - db
+    - broker
+  ports:
+    - "8000:8000"
+  volumes:
+    # Your existing volumes...
+    - ./data:/usr/src/paperless/data
+    - ./media:/usr/src/paperless/media
+    - ./export:/usr/src/paperless/export
+    - ./consume:/usr/src/paperless/consume
+
+    # Add these two lines for ngx-renamer:
+    - ./ngx-renamer:/usr/src/ngx-renamer:ro  # Source code (read-only)
+    - ngx-renamer-venv:/usr/src/ngx-renamer-venv  # Persistent venv
+
+  env_file: docker-compose.env
+  environment:
+    PAPERLESS_REDIS: redis://broker:6379
+    PAPERLESS_DBHOST: db
+
+    # Add this line to enable ngx-renamer:
+    PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/ngx-renamer/scripts/post_consume_wrapper.sh
+
+  # Add this custom entrypoint:
+  entrypoint: /usr/src/ngx-renamer/scripts/init-and-start.sh
+
+# Add this at the bottom of your docker-compose.yml:
+volumes:
+  ngx-renamer-venv:  # Persistent volume for Python dependencies
+```
+
+#### Step 4: Restart Paperless
 
 ```bash
-# you can create an openai key under https://platform.openai.com/settings/organization/api-keys
-OPENAI_API_KEY=<your_key_from_openai>
-# you find the api key in your paperless user proofile
-PAPERLESS_NGX_API_KEY=<your_paperless_api_token>
-# the url of your paperless installation
-# it must be accesible from the container
-# http://<container_name>:<port> e.g. http://paperless-webserver-1:8000
-PAPERLESS_NGX_URL=http://your-domain.whatever:port
+docker compose down
+docker compose up -d
 ```
 
-**Open the `docker-compose.yml` file and add the directory `ngx-renamer` as internal directory to the webserver container and `post_consume_script.sh` as post consumption script:**
+**That's it!** The first startup will take 30-60 seconds to initialize the Python environment. Subsequent restarts are instant.
+
+Check the logs to verify:
+```bash
+docker compose logs webserver | grep ngx-renamer
+```
+
+You should see:
+```
+[ngx-renamer] Initializing Python environment...
+[ngx-renamer] Python environment setup complete!
+[ngx-renamer] Starting Paperless NGX...
+```
+
+---
+
+### Method 2: Standalone Single-File Installation
+
+This is the **simplest possible** installation - just one Python file!
+
+#### Step 1: Copy the standalone script
 
 ```bash
-  webserver:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
-    restart: unless-stopped
-    depends_on:
-      - db
-      - broker
-      - gotenberg
-      - tika
-    ports:
-      - "8443:8000"
-    volumes:
-      - /data/paperless/data:/usr/src/paperless/data
-      - /data/paperless/media:/usr/src/paperless/media
-      - ./export:/usr/src/paperless/export
-      - /data/paperless/consume:/usr/src/paperless/consume
-      # this is the new volume for nxg-renamer - add this
-      - /your/path/to/paperless/ngx-renamer:/usr/src/ngx-renamer
-    env_file: docker-compose.env
-    environment:
-      PAPERLESS_REDIS: redis://broker:6379
-      PAPERLESS_DBHOST: db
-      PAPERLESS_TIKA_ENABLED: 1
-      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
-      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
-      # This is the post consumption script call - add this
-      PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/ngx-renamer/post_consume_script.sh
-```
-**Restart your paperless system:**
-```bash
-user@host:~/paperless$ docker compose down
-[+] Running 6/6
- ✔ Container paperless-webserver-1  Removed  10.4s
- ✔ Container paperless-db-1         Removed   0.3s
- ✔ Container paperless-tika-1       Removed   0.3s
- ✔ Container paperless-broker-1     Removed   0.2s
- ✔ Container paperless-gotenberg-1  Removed  10.2s
- ✔ Network paperless_default        Removed   0.2s
-user@host:~/paperless$ docker compose up -d
-[+] Running 6/6
- ✔ Network paperless_default        Created   0.1s
- ✔ Container paperless-broker-1     Started   0.6s
- ✔ Container paperless-db-1         Started   0.6s
- ✔ Container paperless-gotenberg-1  Started   0.5s
- ✔ Container paperless-tika-1       Started   0.6s
- ✔ Container paperless-webserver-1  Started   0.7s
+cd ~/paperless
+wget https://raw.githubusercontent.com/<your-repo>/ngx-renamer/main/ngx-renamer-standalone.py
+# Or: curl -O https://...
 ```
 
-**To initialize the virtual python environment in the docker container you have to call `setup_venv.sh`once and after any update of the container image. Make sure that the scripts and files are accessible by `root`. Follow these steps:**
+#### Step 2: Update docker-compose.yml
+
+```yaml
+webserver:
+  image: ghcr.io/paperless-ngx/paperless-ngx:latest
+  volumes:
+    # Your existing volumes...
+
+    # Add this single line:
+    - ./ngx-renamer-standalone.py:/usr/local/bin/ngx-renamer.py:ro
+
+  environment:
+    # Add these environment variables:
+    PAPERLESS_POST_CONSUME_SCRIPT: python3 /usr/local/bin/ngx-renamer.py
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
+    PAPERLESS_NGX_URL: http://webserver:8000/api
+    PAPERLESS_NGX_API_KEY: ${PAPERLESS_API_KEY}
+    OPENAI_MODEL: gpt-4o  # Optional: defaults to gpt-4o-mini
+```
+
+#### Step 3: Add credentials to .env
+
+Create or edit your `.env` file in the same directory as `docker-compose.yml`:
+```bash
+OPENAI_API_KEY=sk-your-key-here
+PAPERLESS_API_KEY=your-paperless-token-here
+```
+
+#### Step 4: Restart
 
 ```bash
-# Change owner to root
-user@host:~/paperless$ sudo chown -R root ngx-renamer/
-# Make scripts executable
-user@host:~/paperless$ sudo chmod +x ngx-renamer/setup_venv.sh
-user@host:~/paperless$ sudo chmod +x ngx-renamer/post_consume_script.sh
-# run setup routine
-user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/setup_venv.sh
+docker compose down
+docker compose up -d
 ```
 
-**The result sould look like:**
+**Done!** No setup, no venv, just one file.
 
+---
+
+### Migration from Old Installation Method
+
+If you previously installed ngx-renamer using the manual `setup_venv.sh` method:
+
+1. **Backup your `.env` file** (if using Method 1) or note your API keys
+2. Follow the new installation instructions above
+3. Remove the old manual setup:
+   ```bash
+   rm -rf ngx-renamer/venv  # Old venv no longer needed
+   ```
+4. The new method uses `/usr/src/ngx-renamer-venv` in a Docker volume instead
+
+Your settings.yaml and configuration will continue to work as-is.
+
+---
+
+### Troubleshooting
+
+#### Issue: "Python environment setup failed"
+
+- **Check logs:** `docker compose logs webserver | grep ngx-renamer`
+- **Verify volume:** `docker volume ls | grep ngx-renamer`
+- **Manual setup:** `docker compose exec webserver /usr/src/ngx-renamer/scripts/setup-venv-if-needed.sh`
+
+#### Issue: "Failed to get document details" or "Failed to update title"
+
+- **Verify PAPERLESS_NGX_URL:** Must be accessible from inside the container
+  - Use `http://webserver:8000/api` (service name with /api), NOT `http://localhost:8000/api`
+  - MUST include `/api` at the end
+- **Check API key:** Verify your Paperless API token is correct
+- **Test connectivity:** `docker compose exec webserver curl http://webserver:8000/api/`
+
+#### Issue: "OPENAI_API_KEY environment variable not set"
+
+- **Method 1 users:** Verify `.env` file exists in `ngx-renamer/` directory
+- **Method 2 users:** Check environment variables in `docker-compose.yml`
+- **Verify:** `docker compose exec webserver env | grep OPENAI`
+
+#### Issue: Title generation not running after document upload
+
+- **Check post-consume script is set:**
+  ```bash
+  docker compose exec webserver env | grep PAPERLESS_POST_CONSUME_SCRIPT
+  ```
+- **Manually trigger:** Upload a test document and check logs
+- **Verify script is executable:**
+  ```bash
+  docker compose exec webserver ls -la /usr/src/ngx-renamer/scripts/
+  ```
+
+#### Issue: Dependencies changed but not updating
+
+Method 1 auto-detects requirements.txt changes. To force rebuild:
 ```bash
-# Shortened version of the output
-user@khost:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/setup_venv.sh
-Setting up virtual environment...
-OK
-...
-Downloading PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (767 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 767.5/767.5 kB 5.7 MB/s eta 0:00:00
-Installing collected packages: pyyaml
-Successfully installed pyyaml-6.0.2
+docker compose exec webserver rm /usr/src/ngx-renamer-venv/.initialized
+docker compose restart webserver
 ```
 
-**Done! Post cosumption only start after Paperless NGX created a new document through uploads, consumptions, or mails.**
+#### Issue: Want to update settings.yaml
 
-```bash
-# This script should run with an 404 error.
-user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/post_consume_script.sh
-```
+Method 1: Just edit `settings.yaml` - **no restart needed!** Changes apply to next document.
+
+Method 2: Edit environment variables in docker-compose.yml, then `docker compose up -d`
+
+---
 
 ## The settings
 

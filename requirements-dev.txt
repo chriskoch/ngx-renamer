@@ -1,0 +1,16 @@
+# Include runtime dependencies
+-r requirements.txt
+
+# Testing framework
+pytest>=8.0.0
+pytest-env>=1.1.0          # Environment variable management
+pytest-mock>=3.12.0        # Advanced mocking capabilities
+
+# HTTP mocking
+responses>=0.24.0          # Simple, clean API for mocking requests
+
+# Test utilities
+pytest-timeout>=2.2.0      # Timeout support for tests
+
+# Coverage (optional but recommended)
+pytest-cov>=4.1.0          # Code coverage reporting
