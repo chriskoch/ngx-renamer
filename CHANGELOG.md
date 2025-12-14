@@ -2,7 +2,12 @@
 
 All notable changes to ngx-renamer will be documented in this file.
 
-## [Unreleased] - Dev Branch
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2025-12-15
 
 ### Added
 
@@ -246,5 +251,5 @@ Original implementation and Docker setup: Claude Code with human oversight.
 
 ---
 
-**Note**: This changelog covers changes from the main branch to the dev branch.
-For release notes, see individual release tags.
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/chriskoch/ngx-renamer/releases/tag/v1.0.0
