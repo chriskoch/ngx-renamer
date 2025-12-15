@@ -26,7 +26,7 @@ class TestSchemaStructure:
         assert "properties" in OLLAMA_SCHEMA
         assert "title" in OLLAMA_SCHEMA["properties"]
         assert OLLAMA_SCHEMA["properties"]["title"]["type"] == "string"
-        assert OLLAMA_SCHEMA["properties"]["title"]["maxLength"] == 128
+        assert OLLAMA_SCHEMA["properties"]["title"]["maxLength"] == 127
         assert OLLAMA_SCHEMA["required"] == ["title"]
         assert OLLAMA_SCHEMA["additionalProperties"] is False
 
@@ -37,7 +37,7 @@ class TestSchemaStructure:
         assert "properties" in OPENAI_SCHEMA
         assert "title" in OPENAI_SCHEMA["properties"]
         assert OPENAI_SCHEMA["properties"]["title"]["type"] == "string"
-        assert OPENAI_SCHEMA["properties"]["title"]["maxLength"] == 128
+        assert OPENAI_SCHEMA["properties"]["title"]["maxLength"] == 127
         assert OPENAI_SCHEMA["required"] == ["title"]
         assert OPENAI_SCHEMA["additionalProperties"] is False
 

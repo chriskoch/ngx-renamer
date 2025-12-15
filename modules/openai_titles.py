@@ -9,7 +9,7 @@ TITLE_SCHEMA = {
     "properties": {
         "title": {
             "type": "string",
-            "maxLength": 128,
+            "maxLength": 127,
             "description": "The generated document title"
         }
     },

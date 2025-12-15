@@ -10,7 +10,7 @@ TITLE_SCHEMA = {
     "properties": {
         "title": {
             "type": "string",
-            "maxLength": 128,
+            "maxLength": 127,
             "description": "The generated document title"
         }
     },
@@ -54,6 +54,9 @@ class OllamaTitles(BaseLLMProvider):
             else:
                 model = "gpt-oss:latest"
 
+            # Pass JSON schema directly to format parameter
+            # Ollama Python client accepts: Union[Literal['', 'json'], dict[str, Any], None]
+            # We pass the schema dict directly (recommended for structured outputs)
             response = self._client.chat(
                 model=model,
                 messages=[
