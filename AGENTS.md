@@ -1,564 +1,386 @@
-# ngx-renamer Architecture
+---
+name: ngx-renamer Development Agent
+description: AI coding agent for ngx-renamer, a Paperless NGX document title generator
+---
 
-## Overview
+# AGENTS.md
 
-ngx-renamer is an AI-powered document title generator for Paperless NGX that automatically renames documents using AI language models. It supports multiple LLM providers including OpenAI GPT models and local Ollama models. This document describes the architecture, components, and data flow.
+You are an expert Python developer working on **ngx-renamer**, an AI-powered document title generator for Paperless NGX. Your role is to maintain, test, and improve the codebase while following established conventions.
 
-## System Architecture
+## Project Overview
 
+**Tech Stack:**
+- Python 3.8+
+- OpenAI API (GPT-4o, GPT-4o-mini)
+- Ollama API (local LLM support)
+- PyYAML for configuration
+- pytest for testing
+- Docker for deployment
+
+**Project Structure:**
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Paperless NGX Container                     │
-│                                                                   │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  1. Document Consumption (OCR, Indexing)                   │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                            │                                      │
-│                            ▼                                      │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  2. Post-Consume Hook Trigger                              │ │
-│  │     PAPERLESS_POST_CONSUME_SCRIPT                          │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                            │                                      │
-│                            ▼                                      │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  3. ngx-renamer Execution                                  │ │
-│  │                                                              │ │
-│  │     ┌──────────────────────────────────────────────┐       │ │
-│  │     │ init-and-start.sh (Entrypoint)               │       │ │
-│  │     │ - Checks venv existence                      │       │ │
-│  │     │ - Initializes if needed                      │       │ │
-│  │     │ - Delegates to Paperless entrypoint          │       │ │
-│  │     └──────────────────────────────────────────────┘       │ │
-│  │                                                              │ │
-│  │     ┌──────────────────────────────────────────────┐       │ │
-│  │     │ post_consume_wrapper.sh                      │       │ │
-│  │     │ - Activates venv                             │       │ │
-│  │     │ - Sets environment variables                 │       │ │
-│  │     │ - Executes change_title.py                   │       │ │
-│  │     └──────────────────────────────────────────────┘       │ │
-│  │                                                              │ │
-│  │     ┌──────────────────────────────────────────────┐       │ │
-│  │     │ change_title.py (Main Orchestrator)          │       │ │
-│  │     │ - Loads configuration                        │       │ │
-│  │     │ - Instantiates PaperlessAITitles             │       │ │
-│  │     │ - Triggers title generation                  │       │ │
-│  │     └──────────────────────────────────────────────┘       │ │
-│  │                                                              │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                            │                                      │
-│                            ▼                                      │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  4. PaperlessAITitles Agent (Orchestrator)                │ │
-│  │     - Fetches document via Paperless API                   │ │
-│  │     - Extracts OCR content                                 │ │
-│  │     - Selects LLM provider (OpenAI or Ollama)              │ │
-│  │     - Delegates to provider agent                          │ │
-│  │     - Updates document title via Paperless API             │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                            │                                      │
-└────────────────────────────┼──────────────────────────────────────┘
-                             │
-                    ┌────────┴────────┐
-                    ▼                 ▼
-       ┌─────────────────────┐  ┌──────────────────────┐
-       │   OpenAI Provider   │  │   Ollama Provider    │
-       │  - GPT-4o           │  │  - Local models      │
-       │  - GPT-4o-mini      │  │  - gpt-oss:latest    │
-       │  - Cloud API        │  │  - No API costs      │
-       └─────────────────────┘  └──────────────────────┘
-                │                         │
-                └────────┬────────────────┘
-                         ▼
-              Generates optimized title
-              Returns to PaperlessAITitles
+ngx-renamer/
+├── change_title.py          # Main entry point
+├── modules/
+│   ├── base_llm_provider.py    # Abstract base class for LLM providers
+│   ├── openai_titles.py        # OpenAI integration
+│   ├── ollama_titles.py        # Ollama integration
+│   └── paperless_ai_titles.py  # Paperless API orchestrator
+├── scripts/
+│   ├── init-and-start.sh           # Docker entrypoint
+│   ├── setup-venv-if-needed.sh     # Venv initialization
+│   └── post_consume_wrapper.sh     # Post-consume hook
+├── tests/
+│   ├── conftest.py                 # Test fixtures
+│   ├── fixtures/                   # Test data (YAML configs)
+│   └── integration/                # Integration tests
+├── settings.yaml            # Configuration file
+├── requirements.txt         # Runtime dependencies
+└── requirements-dev.txt     # Development dependencies
 ```
 
-## Core Components
+## Commands
 
-### 1. Entry Point & Initialization
-
-#### `scripts/init-and-start.sh`
-**Purpose**: Custom entrypoint wrapper that ensures Python environment is ready before Paperless starts.
-
-**Responsibilities**:
-- Check if virtual environment exists
-- Detect if requirements.txt has changed
-- Trigger venv initialization if needed
-- Delegate to Paperless's original entrypoint
-
-**Flow**:
+### Development Setup
 ```bash
-if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    # Initialize new venv
-    /usr/src/ngx-renamer/scripts/setup-venv-if-needed.sh
-else
-    # Venv exists, proceed to Paperless startup
-    exec /sbin/docker-entrypoint.sh "$@"
-fi
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt requirements-dev.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-#### `scripts/setup-venv-if-needed.sh`
-**Purpose**: Conditional virtual environment setup and dependency installation.
-
-**Responsibilities**:
-- Create Python venv at `/usr/src/ngx-renamer-venv`
-- Install dependencies from `requirements.txt`
-- Create `.initialized` marker file
-- Handle dependency updates
-
-**Key Logic**:
-```bash
-# Check for activate file, not just directory (Docker volume mount fix)
-if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    python3 -m venv "$VENV_PATH"
-fi
-```
-
-### 2. Execution Wrapper
-
-#### `scripts/post_consume_wrapper.sh`
-**Purpose**: Post-consume hook that bridges Paperless and the Python environment.
-
-**Responsibilities**:
-- Activate the persistent venv
-- Set environment variables (RUN_DIR)
-- Execute the main Python script
-- Handle errors gracefully
-
-**Environment**:
-- `DOCUMENT_ID`: Provided by Paperless NGX
-- `RUN_DIR`: Path to ngx-renamer source
-
-### 3. Main Orchestrator
-
-#### `change_title.py`
-**Purpose**: Main entry point for title generation workflow.
-
-**Components**:
-```python
-def main():
-    # 1. Load environment variables
-    load_dotenv()  # Support both .env file and env vars
-
-    # 2. Extract configuration
-    document_id = os.environ.get('DOCUMENT_ID')
-    paperless_url = os.getenv("PAPERLESS_NGX_URL")
-    paperless_api_key = os.getenv("PAPERLESS_NGX_API_KEY")
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    # 3. Instantiate agent
-    ai = PaperlessAITitles(
-        openai_api_key,
-        paperless_url,
-        paperless_api_key,
-        settings_path
-    )
-
-    # 4. Execute workflow
-    ai.generate_and_update_title(document_id)
-```
-
-**Configuration Sources** (priority order):
-1. Environment variables from docker-compose
-2. `.env` file in ngx-renamer directory
-3. Default values
-
-### 4. Paperless Integration Agent
-
-#### `modules/paperless_ai_titles.py`
-**Purpose**: Orchestrator that handles Paperless NGX API interactions and LLM provider selection.
-
-**Architecture**: Factory pattern for provider selection based on configuration.
-
-**Key Methods**:
-
-##### `_create_llm_provider()`
-**Factory method** that instantiates the appropriate LLM provider:
-```python
-provider = settings.get("llm_provider", "openai").lower()
-
-if provider == "openai":
-    return OpenAITitles(openai_api_key, settings_file)
-elif provider == "ollama":
-    return OllamaTitles(ollama_base_url, settings_file)
-else:
-    raise ValueError(f"Unknown LLM provider '{provider}'")
-```
-
-##### `__get_document_details(document_id)`
-```python
-GET /api/documents/{document_id}/
-Authorization: Token {paperless_api_key}
-
-Returns: {
-    "id": 123,
-    "title": "original_filename.pdf",
-    "content": "OCR-extracted text...",
-    ...
-}
-```
-
-##### `__update_document_title(document_id, new_title)`
-```python
-PATCH /api/documents/{document_id}/
-Authorization: Token {paperless_api_key}
-Content-Type: application/json
-
-Body: {
-    "title": "AI-Generated - Brief Description"
-}
-```
-
-##### `generate_and_update_title(document_id)`
-**Workflow**:
-1. Fetch document details from Paperless
-2. Extract OCR content
-3. Call OpenAI agent to generate title
-4. Update document with new title
-5. Handle errors at each step
-
-### 5. LLM Provider Agents
-
-All providers inherit from `BaseLLMProvider` which provides common functionality:
-- Settings loading from YAML
-- Prompt building with date handling
-- Shared configuration structure
-
-#### `modules/openai_titles.py` - OpenAI Provider
-**Purpose**: Handles all interactions with OpenAI API and prompt engineering.
-
-**Key Methods**:
-
-#### `modules/ollama_titles.py` - Ollama Provider
-**Purpose**: Handles interactions with local Ollama API for on-premise/offline title generation.
-
-**Key Features**:
-- No API costs (runs locally)
-- Privacy-focused (no data leaves your network)
-- Support for various open-source models
-- Same prompt structure as OpenAI
-
-**Key Methods**:
-
-##### `__call_ollama_api(content, role="user")`
-```python
-ollama.Client(host=ollama_base_url).chat(
-    model="gpt-oss:latest",
-    messages=[{"role": "user", "content": prompt}]
-)
-```
-
-**Error Handling**:
-- Model not found → Suggests `ollama pull` command
-- Service unavailable → Returns None gracefully
-- Connection errors → Logged with helpful debug info
-
-### 6. Shared Configuration
-
-##### Settings File Structure (`settings.yaml`)
-Supports both providers with unified configuration:
-```yaml
-# Provider Selection
-llm_provider: "ollama"  # or "openai"
-
-# Provider-specific settings
-openai:
-  model: "gpt-4o"
-
-ollama:
-  model: "gpt-oss:latest"
-
-# Shared settings
-with_date: false
-prompt:
-  main: "System instruction for title generation..."
-  with_date: "Date extraction instructions..."
-  no_date: ""
-```
-
-##### `__ask_chat_gpt(content, role="user")`
-```python
-OpenAI.chat.completions.create(
-    model="gpt-4o",
-    messages=[{
-        "role": "user",
-        "content": prompt
-    }]
-)
-```
-
-##### `generate_title_from_text(text)`
-**Workflow**:
-1. Load settings from YAML
-2. Build prompt based on configuration
-3. Append date instructions if `with_date: true`
-4. Add document content
-5. Call OpenAI API
-6. Extract and return generated title
-
-**Prompt Structure**:
-```
-{main_prompt}
-{with_date_or_no_date_prompt}
-{pre_content_marker}
-{document_text}
-{post_content_marker}
-```
-
-## Data Flow
-
-### Normal Document Processing
-
-```
-1. User uploads document to Paperless
-   ↓
-2. Paperless performs OCR and indexing
-   ↓
-3. Paperless triggers post-consume script
-   PAPERLESS_POST_CONSUME_SCRIPT=/usr/src/ngx-renamer/scripts/post_consume_wrapper.sh
-   Environment: DOCUMENT_ID=123
-   ↓
-4. post_consume_wrapper.sh activates venv and runs change_title.py
-   ↓
-5. change_title.py instantiates PaperlessAITitles
-   ↓
-6. PaperlessAITitles.generate_and_update_title(123)
-   ├─ 6a. Load settings and select provider (OpenAI or Ollama)
-   ├─ 6b. GET /api/documents/123/ (fetch document)
-   ├─ 6c. Extract content: "OCR text..."
-   ├─ 6d. LLMProvider.generate_title_from_text("OCR text...")
-   │      ├─ Build prompt from settings
-   │      ├─ Call LLM API (OpenAI or Ollama)
-   │      └─ Return: "Amazon - Monthly Subscription Invoice"
-   └─ 6e. PATCH /api/documents/123/ (update title)
-   ↓
-7. Paperless saves document with new AI-generated title
-```
-
-### Error Handling
-
-Each layer handles errors independently:
-
-**Layer 1: Paperless API**
-- 401 Unauthorized → Invalid API token
-- 404 Not Found → Document doesn't exist
-- Network errors → Retry logic
-
-**Layer 2: OpenAI API**
-- 401 Unauthorized → Invalid OpenAI key
-- 429 Rate Limit → Back off and retry
-- Timeout → Log and skip
-
-**Layer 3: Script Execution**
-- Missing environment → Error message
-- Failed venv activation → Initialization error
-- Python errors → Logged to Paperless console
-
-## Installation Methods
-
-### Method 1: Auto-Init (Recommended)
-
-**Components Required**:
-- Docker volume: `ngx-renamer-venv`
-- Custom entrypoint: `init-and-start.sh`
-- Volume mount: `./ngx-renamer:/usr/src/ngx-renamer:ro`
-- Post-consume script: `post_consume_wrapper.sh`
-
-**Advantages**:
-- Zero manual setup
-- Automatic venv initialization
-- Persistent across restarts
-- Dependency change detection
-
-### Method 2: Standalone Single-File
-
-**Components Required**:
-- Single file: `ngx-renamer-standalone.py`
-- Environment variables only
-- No venv needed
-
-**Advantages**:
-- Ultra-minimal setup
-- No build step
-- Easier to understand
-- Good for simple deployments
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DOCUMENT_ID` | Yes | - | Provided by Paperless automatically |
-| `OPENAI_API_KEY` | Conditional | - | Required if using OpenAI provider |
-| `OLLAMA_BASE_URL` | Conditional | `http://localhost:11434` | Required if using Ollama provider |
-| `PAPERLESS_NGX_API_KEY` | Yes | - | Paperless API token |
-| `PAPERLESS_NGX_URL` | Yes | - | Paperless API URL (must include `/api`) |
-| `OPENAI_MODEL` | No | `gpt-4o-mini` | OpenAI model to use (deprecated, use settings.yaml) |
-| `TITLE_WITH_DATE` | No | `false` | Include date in title |
-| `RUN_DIR` | No | - | Script runtime directory |
-
-### Settings File (settings.yaml)
-
-```yaml
-# ============================================================================
-# LLM Provider Configuration
-# ============================================================================
-# Choose which LLM provider to use: "openai" or "ollama"
-llm_provider: "ollama"  # options: "openai" or "ollama"
-
-# ============================================================================
-# OpenAI-specific Configuration
-# ============================================================================
-openai:
-  model: "gpt-4o"  # OpenAI model to use
-
-# ============================================================================
-# Ollama-specific Configuration
-# ============================================================================
-ollama:
-  model: "gpt-oss:latest"  # Ollama model (must be pulled first)
-
-# ============================================================================
-# Shared Configuration
-# ============================================================================
-with_date: false  # Include date prefix in title
-
-# Prompt engineering (shared by all providers)
-prompt:
-  main: |
-    System instructions for title generation
-    Requirements: 50-100 chars, max 127
-    Format: "Sender - Brief Description"
-
-  with_date: |
-    Additional instructions for date extraction
-
-  no_date: ""
-
-# ============================================================================
-# Legacy Configuration (backward compatibility)
-# ============================================================================
-openai_model: "gpt-4o"  # Deprecated: Use openai.model instead
-```
-
-## Testing
-
-### Test Structure
-
-```
-tests/
-├── conftest.py              # Fixtures and configuration
-├── fixtures/                # Test data
-│   ├── settings_valid.yaml
-│   ├── settings_ollama.yaml
-│   ├── settings_openai_new_format.yaml
-│   ├── settings_invalid_provider.yaml
-│   └── ...
-└── integration/             # Integration tests
-    ├── test_end_to_end.py                 # Full workflow
-    ├── test_openai_integration.py         # OpenAI API tests
-    ├── test_ollama_integration.py         # Ollama API tests
-    ├── test_llm_provider_selection.py     # Multi-provider tests
-    └── test_paperless_integration.py      # Paperless API tests
-```
-
-### Test Markers
-
-```python
-@pytest.mark.integration  # Full integration test
-@pytest.mark.openai       # Real OpenAI API call (requires API key, costs money)
-@pytest.mark.ollama       # Real Ollama API call (requires Ollama running locally)
-@pytest.mark.smoke        # Critical smoke test
-@pytest.mark.slow         # Slow-running test
-```
-
-### Running Tests
-
+### Testing
 ```bash
 # Run all tests
-pytest
+pytest tests/
 
-# Run only OpenAI tests (requires OPENAI_API_KEY)
-pytest -m openai
+# Run specific test categories
+pytest -m smoke          # Critical smoke tests
+pytest -m integration    # All integration tests
+pytest -m openai        # OpenAI API tests (costs money, requires OPENAI_API_KEY)
+pytest -m ollama        # Ollama tests (requires Ollama running on localhost:11434)
 
-# Run only Ollama tests (requires Ollama running)
-OLLAMA_BASE_URL=http://localhost:11434 pytest -m ollama
+# Run specific test files
+pytest tests/integration/test_openai_integration.py
+pytest tests/integration/test_ollama_integration.py
+pytest tests/integration/test_llm_provider_selection.py
+pytest tests/integration/test_paperless_integration.py
+pytest tests/integration/test_end_to_end.py
 
-# Run provider selection tests (no API calls)
-pytest tests/integration/test_llm_provider_selection.py::TestLLMProviderSelection
+# Coverage reporting
+pytest --cov=modules --cov-report=html
+pytest --cov=modules --cov-report=term-missing
+
+# Skip expensive API tests
+pytest -m "not openai and not ollama"
 ```
 
-## Security Considerations
+### Manual Testing
+```bash
+# Test title generation with sample text
+python3 test_title.py
 
-### API Keys
-- Never commit `.env` files (gitignored)
-- Use environment variables in production
-- Rotate keys regularly
+# Test with your own PDF
+python3 ./test_pdf.py path/to/your/ocr-ed/pdf/file
+```
 
-### Network Security
-- All API calls use HTTPS (OpenAI)
-- Internal Docker networking (Paperless)
-- No external access required for Paperless API
+### Docker Integration
+```bash
+# Check logs in Paperless container
+docker compose logs webserver | grep ngx-renamer
 
-### Container Security
-- Read-only source mount (`:ro`)
-- Minimal permissions
-- Isolated venv in separate volume
-- No root execution required
+# Force rebuild venv
+docker compose exec webserver rm /usr/src/ngx-renamer-venv/.initialized
+docker compose restart webserver
 
-## Performance
+# Test API connectivity
+docker compose exec webserver curl http://webserver:8000/api/
+docker compose exec webserver curl http://host.docker.internal:11434/api/version
+```
 
-### Initialization
-- First start: 30-60 seconds (venv creation)
-- Subsequent starts: Instant (venv cached)
+## Code Style & Conventions
 
-### Title Generation
-- API latency: 1-3 seconds (depends on document length)
-- No impact on document consumption
-- Runs asynchronously after OCR
+### Python Style
+- **Follow PEP 8** for all Python code
+- Use **type hints** where appropriate
+- Keep functions focused and under 50 lines when possible
+- Use descriptive variable names (no single letters except loop counters)
 
-### Resource Usage
-- Memory: ~50MB (Python + dependencies)
-- Disk: ~200MB (venv + dependencies)
-- CPU: Minimal (I/O bound)
+### Example: Good Code Style
+```python
+def generate_title_from_text(self, text: str) -> str:
+    """
+    Generate an AI-powered title from OCR text.
+
+    Args:
+        text: OCR-extracted document content
+
+    Returns:
+        Generated title string (max 127 characters)
+    """
+    prompt = self._build_prompt(text)
+    response = self._call_llm_api(prompt)
+    return self._extract_title(response)
+```
+
+### Example: Bad Code Style
+```python
+# ❌ Avoid this
+def gen(t):  # Unclear name, no docstring, no type hints
+    p = self.make_p(t)
+    r = self.call(p)
+    return r.strip()
+```
+
+### Naming Conventions
+- **Classes**: `PascalCase` (e.g., `PaperlessAITitles`, `OpenAITitles`)
+- **Functions/Methods**: `snake_case` (e.g., `generate_title`, `_build_prompt`)
+- **Private methods**: Prefix with `_` (e.g., `_call_openai_api`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `DEFAULT_MODEL`, `MAX_TITLE_LENGTH`)
+- **Test files**: `test_*.py` (e.g., `test_openai_integration.py`)
+- **Test functions**: `test_*` (e.g., `test_ollama_title_generation`)
+
+### LLM Provider Pattern
+All LLM providers inherit from `BaseLLMProvider`:
+
+```python
+class NewProvider(BaseLLMProvider):
+    """New LLM provider implementation."""
+
+    def __init__(self, api_key: str, settings_file: str):
+        super().__init__(settings_file)
+        self.api_key = api_key
+
+    def generate_title_from_text(self, text: str) -> str:
+        """Required method - generates title from text."""
+        prompt = self._build_prompt(text)  # Inherited from base
+        return self._call_provider_api(prompt)
+```
+
+## Test Requirements
+
+### Test Markers
+Always tag tests with appropriate markers:
+```python
+@pytest.mark.integration  # Full integration test
+@pytest.mark.openai       # Real OpenAI API call (costs money)
+@pytest.mark.ollama       # Real Ollama API call (requires local Ollama)
+@pytest.mark.smoke        # Critical smoke test
+@pytest.mark.slow         # Slow-running test (>5 seconds)
+```
+
+### Test Coverage
+- **Minimum coverage**: 80% for all modules
+- Run `pytest --cov=modules --cov-report=term-missing` before committing
+- Add tests for all new features and bug fixes
+
+### Mock External APIs
+Use pytest fixtures for mocking external services:
+```python
+@pytest.fixture
+def mock_openai_response(monkeypatch):
+    """Mock OpenAI API response."""
+    def mock_create(*args, **kwargs):
+        return MockResponse(content="Test Title")
+    monkeypatch.setattr("openai.chat.completions.create", mock_create)
+```
+
+## Boundaries
+
+### ✅ Always Do
+
+- **Run tests before committing**: `pytest tests/`
+- **Check coverage**: Ensure >80% coverage for modified modules
+- **Update tests**: Add tests for new features and bug fixes
+- **Follow naming conventions**: Use established patterns for files, classes, functions
+- **Add docstrings**: Document all public methods with Google-style docstrings
+- **Use type hints**: Add type annotations to function signatures
+- **Handle errors gracefully**: Catch exceptions and provide meaningful error messages
+- **Update CHANGELOG.md**: Document changes in the changelog
+- **Test both providers**: Ensure changes work with both OpenAI and Ollama
+
+### ⚠️ Ask First
+
+- **Add new dependencies**: Check with maintainer before adding to requirements.txt
+- **Change API contracts**: Modifications to public method signatures need approval
+- **Modify settings.yaml structure**: Configuration changes affect all users
+- **Add new LLM providers**: Requires architectural review
+- **Change Docker entrypoint logic**: Critical for deployment
+- **Modify test fixtures**: May affect multiple tests
+- **Update environment variables**: Document in README.md and .env.example
+
+### 🚫 Never
+
+- **Commit API keys**: Never commit .env files or hardcode secrets
+- **Skip tests for "small changes"**: All changes need tests
+- **Modify vendor code**: Don't change third-party libraries
+- **Break backward compatibility**: Without major version bump
+- **Remove error handling**: Don't make code less robust
+- **Use `print()` for debugging**: Use proper logging instead
+- **Commit commented-out code**: Remove dead code before committing
+- **Push directly to main**: Always use pull requests
+- **Add tool advertisements**: Never add "Developed with X", "Built by Y", "Maintained by Z" credits for AI tools
+- **Add Co-Authored-By for AI tools**: Don't add co-author credits in commit messages for AI assistants
+- **Add AI tool links**: Don't add links to Claude Code, GitHub Copilot, or other AI coding tools in documentation
+
+## Paperless NGX Integration
+
+### Environment Variables
+```bash
+# Required
+PAPERLESS_NGX_API_KEY=your-token-here
+PAPERLESS_NGX_URL=http://webserver:8000/api  # Must end with /api
+DOCUMENT_ID=123  # Provided by Paperless automatically
+
+# For OpenAI provider
+OPENAI_API_KEY=sk-your-key-here
+
+# For Ollama provider
+OLLAMA_BASE_URL=http://host.docker.internal:11434  # Mac/Windows
+OLLAMA_BASE_URL=http://172.17.0.1:11434            # Linux
+```
+
+### API Endpoints Used
+- `GET /api/documents/{id}/` - Fetch document details and OCR content
+- `PATCH /api/documents/{id}/` - Update document title
+
+### Docker Networking
+- Paperless API: Use `http://webserver:8000/api` (service name, NOT localhost)
+- Ollama (host): Use `http://host.docker.internal:11434` (Mac/Windows) or `http://172.17.0.1:11434` (Linux)
+
+## Common Development Tasks
+
+### Adding a New LLM Provider
+
+1. Create new provider class in `modules/`:
+   ```python
+   class NewProvider(BaseLLMProvider):
+       def generate_title_from_text(self, text: str) -> str:
+           # Implementation
+   ```
+
+2. Update factory method in `modules/paperless_ai_titles.py`:
+   ```python
+   elif provider == "newprovider":
+       return NewProvider(api_key, settings_file)
+   ```
+
+3. Add provider config to `settings.yaml`:
+   ```yaml
+   llm_provider: "newprovider"
+   newprovider:
+     model: "model-name"
+   ```
+
+4. Add integration tests:
+   ```python
+   @pytest.mark.integration
+   @pytest.mark.newprovider
+   def test_newprovider_title_generation():
+       # Test implementation
+   ```
+
+5. Update documentation in README.md and ARCHITECTURE.md
+
+### Debugging Issues
+
+**Check Paperless logs:**
+```bash
+docker compose logs webserver | tail -50
+docker compose logs webserver | grep -i error
+```
+
+**Test API connectivity:**
+```bash
+# From host
+curl http://localhost:8000/api/
+
+# From container
+docker compose exec webserver curl http://webserver:8000/api/
+```
+
+**Verify environment variables:**
+```bash
+docker compose exec webserver env | grep -E "OPENAI|PAPERLESS|OLLAMA"
+```
+
+**Test title generation manually:**
+```bash
+# Set environment variables
+export DOCUMENT_ID=123
+export PAPERLESS_NGX_API_KEY=your-key
+export PAPERLESS_NGX_URL=http://localhost:8000/api
+export OPENAI_API_KEY=sk-your-key
+
+# Run script
+python3 change_title.py
+```
+
+## Git Workflow
+
+### Commit Messages
+Use conventional commit format:
+```
+Add: Feature description
+Fix: Bug description
+Update: Change description
+Test: Test addition/modification
+Docs: Documentation update
+Refactor: Code refactoring
+```
+
+### Pull Request Process
+1. Create feature branch: `git checkout -b feature/your-feature`
+2. Make changes and add tests
+3. Run test suite: `pytest tests/`
+4. Check coverage: `pytest --cov=modules --cov-report=term-missing`
+5. Update CHANGELOG.md
+6. Commit with descriptive message
+7. Push and create PR
+8. Ensure CI passes before merging
 
 ## Troubleshooting
 
-See [README.md Troubleshooting Section](README.md#troubleshooting) for common issues and solutions.
+### Common Issues for Agents
 
-## Future Enhancements
+**Import errors in tests:**
+```bash
+export PYTHONPATH="${PYTHONPATH}:${PWD}"
+pytest tests/
+```
 
-Completed:
-- [x] Multiple AI provider support (OpenAI, Ollama) ✅ 2024-12-15
+**Mock server conflicts:**
+```bash
+# Check if ports are in use
+lsof -i :8000   # Paperless mock
+lsof -i :11434  # Ollama mock
+```
 
-Potential improvements:
-- [ ] Batch processing for existing documents
-- [ ] Custom prompt templates per document type
-- [ ] Additional providers (Claude, Gemini, local models)
-- [ ] Title quality scoring and validation
-- [ ] Automatic language detection
-- [ ] Title history and rollback
-- [ ] Web UI for configuration
-- [ ] Metrics and analytics dashboard
+**Fixtures not loading:**
+```bash
+ls -la tests/fixtures/  # Verify settings_*.yaml exist
+```
 
-## Contributing
+**Coverage not tracking:**
+```bash
+pip install -e .  # Install in development mode
+pytest --cov=modules --cov-report=term-missing
+```
 
-See [CHANGELOG.md](CHANGELOG.md) for recent changes and development history.
+## Additional Resources
+
+- **Architecture Details**: See [ARCHITECTURE.md](ARCHITECTURE.md)
+- **User Documentation**: See [README.md](README.md)
+- **Change History**: See [CHANGELOG.md](CHANGELOG.md)
+- **Examples**: See [examples/README.md](examples/README.md)
 
 ---
 
-**Last Updated**: 2024-12-15
-**Version**: Dev Branch (Multi-LLM Support)
-**Maintained by**: Claude Code with human oversight
-
-## Recent Changes
-
-### 2024-12-15: Multi-LLM Provider Support
-- Added Ollama provider for local/offline title generation
-- Implemented provider factory pattern in PaperlessAITitles
-- Created BaseLLMProvider abstract class for shared functionality
-- Added comprehensive test suite for multi-provider support
-- Updated configuration format with `llm_provider` setting
-- Backward compatible with existing OpenAI-only configurations
+**License**: MIT
+**Version**: 1.1.0

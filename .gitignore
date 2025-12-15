@@ -26,5 +26,7 @@ paperless_dev/
 docker-compose.env
 docker-compose.yml
 
-# Claude Code
+# AI Tool Configuration
 .claude/
+.cursor/
+.aider/

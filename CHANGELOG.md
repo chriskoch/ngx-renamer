@@ -7,7 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2025-12-15
+## [1.1.0] - 2024-12-15
+
+### Changed
+- **Documentation Restructure**: Complete documentation overhaul for clarity
+  - Shortened README.md from 680 to 260 lines (62% reduction)
+  - Created AGENTS.md following official agents.md specification
+  - Renamed old AGENTS.md to ARCHITECTURE.md for detailed technical docs
+  - Removed all AI tool advertisements from documentation
+  - Clear separation: README (users) | AGENTS.md (AI agents) | ARCHITECTURE.md (developers)
+
+### Added
+- **AGENTS.md**: New file following [agents.md](https://agents.md/) specification
+  - Clear persona and role for AI coding agents
+  - Exact commands for development, testing, deployment
+  - Code style examples and naming conventions
+  - Three-tier boundaries (Always/Ask/Never)
+  - Prevents AI tools from adding advertisements or co-author credits
+
+- **ARCHITECTURE.md**: Renamed from AGENTS.md with expanded content
+  - Detailed system architecture and data flow
+  - Component documentation
+  - Advanced LLM provider configuration
+  - Model performance comparisons
+  - Docker networking details
+  - Development setup and testing guide
+
+## [1.0.0] - 2024-12-15
 
 ### Added
 
@@ -243,13 +269,8 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 - Dependencies not updating
 - Settings.yaml changes not applying
 
-## Credits
-
-Multi-LLM implementation (2024-12-15): Architecture, testing, and documentation by Claude Code with human oversight.
-
-Original implementation and Docker setup: Claude Code with human oversight.
-
 ---
 
-[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/chriskoch/ngx-renamer/releases/tag/v1.0.0
