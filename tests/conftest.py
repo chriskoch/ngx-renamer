@@ -114,14 +114,13 @@ def openai_api_key():
 @pytest.fixture
 def ollama_base_url():
     """
-    Get Ollama base URL from environment.
+    Get Ollama base URL for tests.
 
-    Tests marked with @pytest.mark.ollama will skip if URL is not set.
-    Defaults to http://localhost:11434 if not specified.
+    Tests always use localhost (not .env) to avoid Docker networking issues.
+    Individual tests verify if Ollama is actually running.
     """
-    url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    # Note: We don't skip here, we'll let individual tests verify if Ollama is actually running
-    return url
+    # Always use localhost for tests, ignore .env OLLAMA_BASE_URL
+    return "http://localhost:11434"
 
 
 @pytest.fixture
