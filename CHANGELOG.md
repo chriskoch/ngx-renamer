@@ -16,12 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive error handling for malformed JSON responses
   - 28 new unit tests covering JSON parsing, truncation, and edge cases
   - Cross-provider consistency tests ensure identical behavior
+- **Testing Guide**: Created TESTING_STRUCTURED_OUTPUTS.md
+  - Comprehensive guide for verifying structured outputs work correctly
+  - Troubleshooting steps for common issues
+  - Alternative format approaches for Ollama if needed
+  - Manual testing procedures for both providers
 
 ### Changed
 - **Improved Response Parsing**: Both providers now parse structured JSON responses
   - Ollama: Added `_parse_structured_response()` method
   - OpenAI: Added `_parse_structured_response()` method
   - Consistent error messages guide users when models don't support structured outputs
+
+### Fixed
+- **JSON Schema maxLength**: Corrected from 128 to 127 characters
+  - Now matches Paperless NGX's actual title limit
+  - Prevents models from generating titles that get truncated post-generation
+  - Schema properly constrains models to the real limit
 
 ### Removed
 - **Simplified Prompts**: Removed redundant "Output only the title text, nothing else" instruction
