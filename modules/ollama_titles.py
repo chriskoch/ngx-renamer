@@ -1,6 +1,22 @@
 """Ollama LLM provider for title generation."""
+import json
 import ollama
 from modules.base_llm_provider import BaseLLMProvider
+
+
+# JSON schema for structured title output
+TITLE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "The generated document title"
+        }
+    },
+    "required": ["title"],
+    "additionalProperties": False
+}
 
 
 class OllamaTitles(BaseLLMProvider):
@@ -46,6 +62,7 @@ class OllamaTitles(BaseLLMProvider):
                         "content": content,
                     },
                 ],
+                format=TITLE_SCHEMA,
             )
             return response
         except ollama.ResponseError as e:
@@ -79,10 +96,49 @@ class OllamaTitles(BaseLLMProvider):
         result = self.__call_ollama_api(prompt)
         if result:
             try:
-                return result['message']['content']
+                content = result['message']['content']
+                return self._parse_structured_response(content)
             except (KeyError, TypeError) as e:
                 print(f"Unexpected response structure from Ollama: {e}")
                 print(f"Response: {result}")
                 return None
 
         return None
+
+    def _parse_structured_response(self, content):
+        """Parse structured JSON response from Ollama.
+
+        Args:
+            content: JSON string from Ollama response
+
+        Returns:
+            str: Extracted title, or None if parsing failed
+        """
+        try:
+            # Parse JSON response
+            data = json.loads(content)
+
+            # Extract title field
+            title = data.get("title", "")
+
+            if not title:
+                print("Warning: Structured response missing 'title' field or title is empty")
+                print(f"Response: {content}")
+                return None
+
+            # Auto-truncate if title exceeds Paperless NGX limit (127 chars)
+            if len(title) > 127:
+                print(f"Warning: Title exceeds 127 chars, truncating: {title}")
+                title = title[:127]
+
+            return title
+
+        except json.JSONDecodeError as e:
+            print(f"Error: Ollama returned invalid JSON: {e}")
+            print(f"Content: {content}")
+            print("This may indicate the model doesn't support structured outputs.")
+            return None
+        except Exception as e:
+            print(f"Error parsing structured response: {e}")
+            print(f"Content: {content}")
+            return None

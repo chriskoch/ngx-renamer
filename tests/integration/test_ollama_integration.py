@@ -179,3 +179,37 @@ prompt:
 
         # Should return None when model is not found
         assert title is None
+
+    def test_structured_output_returns_valid_title(
+        self, ollama_base_url, settings_ollama_path, sample_invoice_text
+    ):
+        """Test that structured outputs produce valid titles from real Ollama API."""
+        available, msg = check_ollama_available(ollama_base_url)
+        if not available:
+            pytest.skip(msg)
+
+        ai = OllamaTitles(ollama_base_url, str(settings_ollama_path))
+        title = ai.generate_title_from_text(sample_invoice_text)
+
+        # Verify title was generated successfully
+        assert title is not None
+        assert isinstance(title, str)
+        assert len(title) > 0
+        assert len(title) <= 127  # Auto-truncation should ensure this
+        print(f"Structured output title: {title}")
+
+    def test_structured_output_auto_truncates(
+        self, ollama_base_url, settings_ollama_path, sample_long_text
+    ):
+        """Test that very long documents produce titles within 127 char limit."""
+        available, msg = check_ollama_available(ollama_base_url)
+        if not available:
+            pytest.skip(msg)
+
+        ai = OllamaTitles(ollama_base_url, str(settings_ollama_path))
+        title = ai.generate_title_from_text(sample_long_text)
+
+        # Even with very long input, title should be truncated to 127 chars
+        assert title is not None
+        assert len(title) <= 127
+        print(f"Auto-truncated title ({len(title)} chars): {title}")

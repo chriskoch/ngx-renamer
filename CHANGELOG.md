@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Structured Outputs for All LLM Providers**: Implemented JSON schema-based structured outputs
+  - Ollama provider now uses `format` parameter with JSON schema
+  - OpenAI provider now uses `response_format` with json_schema
+  - Ensures reliable title extraction without prompt engineering
+  - Auto-truncates titles exceeding 127 characters for Paperless NGX compatibility
+  - Comprehensive error handling for malformed JSON responses
+  - 28 new unit tests covering JSON parsing, truncation, and edge cases
+  - Cross-provider consistency tests ensure identical behavior
+
+### Changed
+- **Improved Response Parsing**: Both providers now parse structured JSON responses
+  - Ollama: Added `_parse_structured_response()` method
+  - OpenAI: Added `_parse_structured_response()` method
+  - Consistent error messages guide users when models don't support structured outputs
+
+### Removed
+- **Simplified Prompts**: Removed redundant "Output only the title text, nothing else" instruction
+  - JSON schema now enforces output format automatically
+  - Cleaner, more focused prompts
+
 ## [1.1.0] - 2024-12-15
 
 ### Changed

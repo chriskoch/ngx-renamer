@@ -22,7 +22,7 @@ openai:
 # Ollama-specific Configuration
 # ============================================================================
 ollama:
-  model: "gpt-oss:latest"  # Ollama model to use (must be pulled: ollama pull gpt-oss:latest)
+  model: "gpt-oss:latest" # Ollama model to use (must be pulled: ollama pull gpt-oss:latest)
 
 # ============================================================================
 # Legacy Configuration (backward compatibility - will be removed in future)
@@ -45,8 +45,6 @@ prompt:
     - Focus on document purpose and content, not formatting artifacts
     - Do NOT include dates, timestamps, or date references in the title
     - Avoid OCR noise, headers, footers, and page numbers
-
-    Output only the title text, nothing else.
 
     Document text:
 
