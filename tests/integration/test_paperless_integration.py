@@ -22,6 +22,7 @@ class TestPaperlessWorkflow:
     def test_successful_title_generation_and_update(
         self,
         openai_api_key,
+        ollama_base_url,
         paperless_url,
         paperless_api_key,
         settings_valid_path,
@@ -61,6 +62,7 @@ class TestPaperlessWorkflow:
             # Execute workflow
             ai = PaperlessAITitles(
                 openai_api_key,
+                ollama_base_url,
                 paperless_url,
                 paperless_api_key,
                 str(settings_valid_path),
@@ -80,6 +82,7 @@ class TestPaperlessWorkflow:
     def test_document_not_found(
         self,
         openai_api_key,
+        ollama_base_url,
         paperless_url,
         paperless_api_key,
         settings_valid_path,
@@ -96,6 +99,7 @@ class TestPaperlessWorkflow:
 
             ai = PaperlessAITitles(
                 openai_api_key,
+                ollama_base_url,
                 paperless_url,
                 paperless_api_key,
                 str(settings_valid_path),
@@ -110,6 +114,7 @@ class TestPaperlessWorkflow:
     def test_paperless_api_error(
         self,
         openai_api_key,
+        ollama_base_url,
         paperless_url,
         paperless_api_key,
         settings_valid_path,
@@ -142,6 +147,7 @@ class TestPaperlessWorkflow:
 
             ai = PaperlessAITitles(
                 openai_api_key,
+                ollama_base_url,
                 paperless_url,
                 paperless_api_key,
                 str(settings_valid_path),

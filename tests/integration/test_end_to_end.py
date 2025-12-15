@@ -34,6 +34,7 @@ class TestCriticalPaths:
     def test_smoke_full_paperless_workflow(
         self,
         openai_api_key,
+        ollama_base_url,
         paperless_url,
         paperless_api_key,
         settings_valid_path,
@@ -59,6 +60,7 @@ class TestCriticalPaths:
             # Execute
             ai = PaperlessAITitles(
                 openai_api_key,
+                ollama_base_url,
                 paperless_url,
                 paperless_api_key,
                 str(settings_valid_path),
