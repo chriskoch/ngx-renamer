@@ -22,7 +22,7 @@ openai:
 # Ollama-specific Configuration
 # ============================================================================
 ollama:
-  model: "gpt-oss:latest" # Ollama model to use (must be pulled: ollama pull gpt-oss:latest)
+  model: "gemma3:latest" # Ollama model to use (must be pulled: ollama pull gpt-oss:latest)
 
 # ============================================================================
 # Legacy Configuration (backward compatibility - will be removed in future)
