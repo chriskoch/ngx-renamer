@@ -288,4 +288,4 @@ Built for [Paperless NGX](https://github.com/paperless-ngx/paperless-ngx)
 
 ---
 
-**License**: MIT
+**License**: GPL-3.0

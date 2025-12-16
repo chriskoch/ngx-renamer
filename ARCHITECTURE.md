@@ -838,5 +838,5 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes and development hist
 
 ---
 
-**License**: MIT
+**License**: GPL-3.0
 **Documentation**: README.md (users) | AGENTS.md (developers) | ARCHITECTURE.md (architecture)

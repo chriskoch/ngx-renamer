@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-12-16
+
+### Fixed
+- **License Alignment**: Corrected all documentation to reflect GPL-3.0 license
+  - Updated README.md badge from MIT to GPL-3.0
+  - Updated license references in AGENTS.md, ARCHITECTURE.md, RELEASE_NOTES.md
+  - All documentation now consistent with LICENSE file (GPL-3.0)
+
 ## [1.2.0] - 2025-12-16
 
 ### Added
@@ -305,7 +313,8 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 
 ---
 
-[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/chriskoch/ngx-renamer/releases/tag/v1.0.0

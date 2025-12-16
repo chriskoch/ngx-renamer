@@ -382,5 +382,5 @@ pytest --cov=modules --cov-report=term-missing
 
 ---
 
-**License**: MIT
+**License**: GPL-3.0
 **Version**: 1.1.0
