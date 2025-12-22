@@ -6,18 +6,20 @@ from modules.ollama_titles import OllamaTitles
 
 
 class PaperlessAITitles:
-    def __init__(self, openai_api_key, ollama_base_url, paperless_url, paperless_api_key, settings_file="settings.yaml"):
+    def __init__(self, openai_api_key, ollama_base_url, ollama_api_key, paperless_url, paperless_api_key, settings_file="settings.yaml"):
         """Initialize Paperless AI Titles orchestrator.
 
         Args:
             openai_api_key: OpenAI API key (required if using OpenAI provider)
             ollama_base_url: Ollama base URL (required if using Ollama provider)
+            ollama_api_key: Ollama API key (optional, for authenticated Ollama instances)
             paperless_url: Paperless NGX API URL
             paperless_api_key: Paperless NGX API key
             settings_file: Path to settings.yaml configuration file
         """
         self.openai_api_key = openai_api_key
         self.ollama_base_url = ollama_base_url
+        self.ollama_api_key = ollama_api_key
         self.paperless_url = paperless_url
         self.paperless_api_key = paperless_api_key
         self.settings_file = settings_file
@@ -70,7 +72,7 @@ class PaperlessAITitles:
                     "OLLAMA_BASE_URL environment variable is required when using Ollama provider.\n"
                     "Either set OLLAMA_BASE_URL or change llm_provider to 'openai' in settings.yaml"
                 )
-            return OllamaTitles(self.ollama_base_url, self.settings_file)
+            return OllamaTitles(self.ollama_base_url, self.ollama_api_key, self.settings_file)
 
         else:
             raise ValueError(

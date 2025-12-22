@@ -26,16 +26,25 @@ class OllamaTitles(BaseLLMProvider):
     Requires Ollama to be running locally or accessible via network.
     """
 
-    def __init__(self, ollama_base_url, settings_file="settings.yaml"):
+    def __init__(self, ollama_base_url, api_key=None, settings_file="settings.yaml"):
         """Initialize Ollama provider.
 
         Args:
             ollama_base_url: URL of Ollama API (e.g., http://localhost:11434)
+            api_key: Optional API key for authenticated Ollama instances (default: None)
             settings_file: Path to settings.yaml configuration file
         """
         super().__init__(settings_file)
         self.ollama_base_url = ollama_base_url
-        self._client = ollama.Client(host=ollama_base_url)
+        self.api_key = api_key
+        
+        headers = {}
+
+        # Add authentication header if API key is provided
+        if api_key and api_key.strip():
+            headers["Authorization"] = f"Bearer {api_key}"
+        
+        self._client = ollama.Client(host=ollama_base_url, headers=headers)
 
     def __call_ollama_api(self, content, role="user"):
         """Call Ollama chat completion API.
