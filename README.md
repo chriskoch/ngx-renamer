@@ -62,6 +62,7 @@ PAPERLESS_NGX_URL=http://webserver:8000/api
 OPENAI_API_KEY=sk-your-key-here
 # OR for Ollama:
 OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_API_KEY=  # Optional, leave empty for local/unauthenticated Ollama
 ```
 
 **3. Update docker-compose.yml**
@@ -165,6 +166,9 @@ Choose between **OpenAI** (cloud) or **Ollama** (local/private).
    OLLAMA_BASE_URL=http://host.docker.internal:11434
    # Linux:
    OLLAMA_BASE_URL=http://172.17.0.1:11434
+   
+   # Optional: Only needed for authenticated Ollama instances
+   OLLAMA_API_KEY=  # Leave empty for local/self-hosted Ollama
    ```
 
 4. Edit `settings.yaml`:
@@ -173,6 +177,8 @@ Choose between **OpenAI** (cloud) or **Ollama** (local/private).
    ollama:
      model: "gpt-oss:latest"
    ```
+
+**Authentication Note**: Local Ollama installations don't require an API key. Only set `OLLAMA_API_KEY` if your Ollama instance is behind an authentication proxy or cloud service that requires it.
 
 **Switch providers anytime** by editing `llm_provider` in `settings.yaml` - no restart needed!
 

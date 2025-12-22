@@ -23,6 +23,7 @@ def main():
     paperless_api_key = os.getenv("PAPERLESS_NGX_API_KEY")
     openai_api_key = os.getenv("OPENAI_API_KEY")
     ollama_base_url = os.getenv("OLLAMA_BASE_URL")
+    ollama_api_key = os.getenv("OLLAMA_API_KEY")
 
     print("Starting Paperless AI Titles")
     print(f"Paperless Document ID: {document_id}")
@@ -32,6 +33,7 @@ def main():
     ai = PaperlessAITitles(
         openai_api_key,
         ollama_base_url,
+        ollama_api_key,
         paperless_url,
         paperless_api_key,
         f"{run_dir}/settings.yaml"
