@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-12-22
+
+### Added
+- **Ollama API Key Authentication**: Support for authenticated Ollama instances
+  - Added optional `OLLAMA_API_KEY` environment variable
+  - Ollama provider now supports Bearer token authentication via `Authorization` header
+  - Works seamlessly with both authenticated and non-authenticated Ollama instances
+  - Empty or whitespace-only API keys are treated as no authentication (backward compatible)
+  - Comprehensive test suite with 15 tests covering all API key scenarios
+  - See [PR #6](https://github.com/chriskoch/ngx-renamer/pull/6) for details
+
+### Changed
+- **Ollama Client Initialization**: Enhanced to conditionally set Authorization header
+  - Only sets `Authorization: Bearer {api_key}` header when valid API key is provided
+  - Maintains full backward compatibility with existing local Ollama setups
+
+### Testing
+- **New Test Suite**: `tests/integration/test_ollama_api_key.py`
+  - 8 unit tests for API key initialization and header setting
+  - 2 tests for PaperlessAITitles API key passing
+  - 5 integration tests for real API calls with/without API key
+  - All tests pass with proper mocking and real Ollama integration
+
+### Acknowledgments
+- **Special Thanks**: A huge thank you to [@kkettinger](https://github.com/kkettinger) (Kevin Kettinger) for contributing the Ollama API key authentication feature! This enhancement enables ngx-renamer to work with authenticated Ollama instances and cloud-hosted Ollama services. Your contribution is greatly appreciated! 🙏
+
 ## [1.2.1] - 2025-12-16
 
 ### Fixed
@@ -313,7 +339,8 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 
 ---
 
-[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...v1.1.0
