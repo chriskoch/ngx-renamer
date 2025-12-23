@@ -839,4 +839,5 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes and development hist
 ---
 
 **License**: GPL-3.0
+**Version**: 1.2.2
 **Documentation**: README.md (users) | AGENTS.md (developers) | ARCHITECTURE.md (architecture)

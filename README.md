@@ -49,7 +49,7 @@ Fully automated setup with persistent configuration.
 **1. Clone the repository**
 ```bash
 cd ~/paperless  # Your docker-compose.yml location
-git clone <repository-url> ngx-renamer
+git clone https://github.com/chriskoch/ngx-renamer.git ngx-renamer
 ```
 
 **2. Configure credentials**

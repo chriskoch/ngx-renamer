@@ -11,8 +11,8 @@ You are an expert Python developer working on **ngx-renamer**, an AI-powered doc
 
 **Tech Stack:**
 - Python 3.8+
-- OpenAI API (GPT-4o, GPT-4o-mini)
-- Ollama API (local LLM support)
+- OpenAI API (GPT-4o, GPT-4o-mini) with structured outputs
+- Ollama API (local LLM support) with JSON schema validation
 - PyYAML for configuration
 - pytest for testing
 - Docker for deployment
@@ -179,6 +179,10 @@ Always tag tests with appropriate markers:
 - **Minimum coverage**: 80% for all modules
 - Run `pytest --cov=modules --cov-report=term-missing` before committing
 - Add tests for all new features and bug fixes
+- **Structured Outputs**: Test both OpenAI and Ollama JSON schema responses (v1.2.0+)
+  - Verify titles auto-truncate to 127 characters
+  - Test JSON parsing and error handling
+  - See [TESTING_STRUCTURED_OUTPUTS.md](TESTING_STRUCTURED_OUTPUTS.md) for details
 
 ### Mock External APIs
 Use pytest fixtures for mocking external services:
@@ -204,6 +208,8 @@ def mock_openai_response(monkeypatch):
 - **Handle errors gracefully**: Catch exceptions and provide meaningful error messages
 - **Update CHANGELOG.md**: Document changes in the changelog
 - **Test both providers**: Ensure changes work with both OpenAI and Ollama
+- **Verify structured outputs**: Ensure titles are valid JSON and ≤127 characters
+- **Test JSON schema compliance**: Verify both providers return properly formatted responses
 
 ### ⚠️ Ask First
 
@@ -244,6 +250,7 @@ OPENAI_API_KEY=sk-your-key-here
 # For Ollama provider
 OLLAMA_BASE_URL=http://host.docker.internal:11434  # Mac/Windows
 OLLAMA_BASE_URL=http://172.17.0.1:11434            # Linux
+OLLAMA_API_KEY=  # Optional: Only for authenticated Ollama instances (v1.2.2+)
 ```
 
 ### API Endpoints Used
@@ -383,4 +390,4 @@ pytest --cov=modules --cov-report=term-missing
 ---
 
 **License**: GPL-3.0
-**Version**: 1.1.0
+**Version**: 1.2.2
