@@ -4,9 +4,12 @@ import os
 
 from dotenv import load_dotenv
 from modules.paperless_ai_titles import PaperlessAITitles
+from modules.logger import get_logger
 
 
 def main():
+    logger = get_logger(__name__)
+
     document_id=os.environ.get('DOCUMENT_ID')
     run_dir=os.environ.get('RUN_DIR')
 
@@ -25,9 +28,9 @@ def main():
     ollama_base_url = os.getenv("OLLAMA_BASE_URL")
     ollama_api_key = os.getenv("OLLAMA_API_KEY")
 
-    print("Starting Paperless AI Titles")
-    print(f"Paperless Document ID: {document_id}")
-    print(f"Directory where script runs in container: {run_dir}")
+    logger.info("Starting Paperless AI Titles")
+    logger.info(f"Paperless Document ID: {document_id}")
+    logger.info(f"Directory where script runs in container: {run_dir}")
 
     # PaperlessAITitles will determine provider from settings.yaml
     ai = PaperlessAITitles(
