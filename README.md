@@ -16,7 +16,7 @@ ngx-renamer automatically generates intelligent titles for your Paperless NGX do
 
 ### Features
 
-- **Multiple LLM Providers** - OpenAI (cloud) or Ollama (local/private)
+- **Multiple LLM Providers** - OpenAI (cloud), Anthropic Claude (cloud), or Ollama (local/private)
 - **Zero-Setup Installation** - Automatic initialization, no manual setup
 - **Smart Title Generation** - Context-aware titles in the document's language
 - **Configurable Prompts** - Customize via YAML settings
@@ -27,6 +27,7 @@ ngx-renamer automatically generates intelligent titles for your Paperless NGX do
 - Paperless NGX in Docker
 - **Choose one**:
   - OpenAI API key ([Get one](https://platform.openai.com/signup)) or
+  - Anthropic Claude API key ([Get one](https://console.anthropic.com/)) or
   - Local Ollama ([Install](https://ollama.ai))
 - Paperless API token (from your user profile)
 
@@ -60,6 +61,8 @@ PAPERLESS_NGX_API_KEY=your-paperless-api-token
 PAPERLESS_NGX_URL=http://webserver:8000/api
 # For OpenAI:
 OPENAI_API_KEY=sk-your-key-here
+# OR for Anthropic Claude:
+CLAUDE_API_KEY=sk-ant-your-key-here
 # OR for Ollama:
 OLLAMA_BASE_URL=http://host.docker.internal:11434
 OLLAMA_API_KEY=  # Optional, leave empty for local/unauthenticated Ollama
@@ -125,7 +128,7 @@ docker compose down && docker compose up -d
 
 ## LLM Provider Setup
 
-Choose between **OpenAI** (cloud) or **Ollama** (local/private).
+Choose between **OpenAI** (cloud), **Anthropic Claude** (cloud), or **Ollama** (local/private).
 
 ### OpenAI Setup
 
@@ -141,6 +144,22 @@ Choose between **OpenAI** (cloud) or **Ollama** (local/private).
    llm_provider: "openai"
    openai:
      model: "gpt-4o-mini"  # or "gpt-4o" for better quality
+   ```
+
+### Anthropic Claude Setup
+
+**High-quality cloud AI with strong reasoning:**
+
+1. Get API key: https://console.anthropic.com/settings/keys
+2. Add to `docker-compose.env`:
+   ```bash
+   CLAUDE_API_KEY=sk-ant-your-key-here
+   ```
+3. Edit `settings.yaml`:
+   ```yaml
+   llm_provider: "claude"
+   claude:
+     model: "claude-3-5-sonnet-20241022"  # Latest model with strong reasoning
    ```
 
 ### Ollama Setup
@@ -190,9 +209,11 @@ Edit `settings.yaml` to customize title generation.
 
 **Choose model:**
 ```yaml
-llm_provider: "openai"  # or "ollama"
+llm_provider: "openai"  # or "claude" or "ollama"
 openai:
   model: "gpt-4o-mini"  # or "gpt-4o" for better quality
+claude:
+  model: "claude-3-5-sonnet-20241022"  # Latest Anthropic model
 ollama:
   model: "gpt-oss:latest"
 ```

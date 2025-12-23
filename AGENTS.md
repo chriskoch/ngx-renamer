@@ -12,6 +12,7 @@ You are an expert Python developer working on **ngx-renamer**, an AI-powered doc
 **Tech Stack:**
 - Python 3.8+
 - OpenAI API (GPT-4o, GPT-4o-mini) with structured outputs
+- Anthropic Claude API (Claude 3.5 Sonnet) with tool calling
 - Ollama API (local LLM support) with JSON schema validation
 - PyYAML for configuration
 - pytest for testing
@@ -24,6 +25,7 @@ ngx-renamer/
 ├── modules/
 │   ├── base_llm_provider.py    # Abstract base class for LLM providers
 │   ├── openai_titles.py        # OpenAI integration
+│   ├── claude_titles.py        # Anthropic Claude integration
 │   ├── ollama_titles.py        # Ollama integration
 │   ├── paperless_ai_titles.py  # Paperless API orchestrator
 │   ├── logger.py               # Centralized logging configuration
@@ -71,10 +73,12 @@ pytest tests/
 pytest -m smoke          # Critical smoke tests
 pytest -m integration    # All integration tests
 pytest -m openai        # OpenAI API tests (costs money, requires OPENAI_API_KEY)
+pytest -m claude        # Claude API tests (costs money, requires CLAUDE_API_KEY)
 pytest -m ollama        # Ollama tests (requires Ollama running on localhost:11434)
 
 # Run specific test files
 pytest tests/integration/test_openai_integration.py
+pytest tests/integration/test_claude_integration.py
 pytest tests/integration/test_ollama_integration.py
 pytest tests/integration/test_llm_provider_selection.py
 pytest tests/integration/test_paperless_integration.py
@@ -192,6 +196,7 @@ Always tag tests with appropriate markers:
 ```python
 @pytest.mark.integration  # Full integration test
 @pytest.mark.openai       # Real OpenAI API call (costs money)
+@pytest.mark.claude       # Real Claude API call (costs money)
 @pytest.mark.ollama       # Real Ollama API call (requires local Ollama)
 @pytest.mark.smoke        # Critical smoke test
 @pytest.mark.slow         # Slow-running test (>5 seconds)
@@ -272,6 +277,9 @@ DOCUMENT_ID=123  # Provided by Paperless automatically
 
 # For OpenAI provider
 OPENAI_API_KEY=sk-your-key-here
+
+# For Anthropic Claude provider
+CLAUDE_API_KEY=sk-ant-your-key-here
 
 # For Ollama provider
 OLLAMA_BASE_URL=http://host.docker.internal:11434  # Mac/Windows
@@ -454,4 +462,4 @@ Adding new providers now requires ~50 lines instead of ~200!
 ---
 
 **License**: GPL-3.0
-**Version**: 1.3.0
+**Version**: 1.4.0

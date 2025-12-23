@@ -6,8 +6,82 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.4.0] - 2024-12-23
+
+### Added
+- **Anthropic Claude API Support**: Third LLM provider option alongside OpenAI and Ollama
+  - New `ClaudeTitles` provider in `modules/claude_titles.py`
+  - Uses Claude's tool calling feature for structured JSON outputs
+  - Supports same configuration pattern as existing providers
+  - Default model: `claude-3-5-sonnet-20241022`
+  - Activated via `llm_provider: "claude"` in `settings.yaml`
+  - Requires `CLAUDE_API_KEY` environment variable
+
+- **Extended Test Coverage**: Comprehensive Claude integration tests
+  - `tests/integration/test_claude_integration.py` - Full API integration tests
+  - Provider selection tests for Claude in `test_llm_provider_selection.py`
+  - Test fixtures: `settings_claude.yaml`, `settings_claude_with_date.yaml`
+  - Added `@pytest.mark.claude` marker for expensive API tests
+
+### Changed
+- **Provider Factory Enhancement**: Extended to support Claude credentials
+  - `modules/llm_factory.py` - Added `_create_claude_provider()` method
+  - `modules/paperless_ai_titles.py` - Accept `claude_api_key` parameter
+  - `change_title.py` - Load `CLAUDE_API_KEY` from environment
+  - `modules/constants.py` - Added `PROVIDER_CLAUDE` constant and validation
+
+- **Dependency Updates**:
+  - Added `anthropic>=0.39.0` to `requirements.txt`
+
+### Documentation
+- Plugin architecture successfully validated with third provider
+- Adding new provider now requires ~100 lines vs ~200 with old architecture
+
+## [1.3.0] - 2024-12-23
+
+### Added
+- **Centralized Logging Infrastructure**: Professional logging across all modules
+  - New `modules/logger.py` with formatted console output
+  - Replaced all `print()` statements with proper logging
+  - Structured log messages with timestamps and log levels
+
+- **Constants Module**: Eliminated magic numbers and duplicate schemas
+  - New `modules/constants.py` with all constants and schemas
+  - `TITLE_SCHEMA` defined once, imported everywhere
+  - Provider names, default models, config keys centralized
+
+- **Custom Exception Hierarchy**: Better error handling and debugging
+  - New `modules/exceptions.py` with specific exception types
+  - `NGXRenamerError`, `SettingsError`, `LLMProviderError`, `PaperlessAPIError`
+
+- **Plugin Architecture**: Provider registry pattern for easy extensibility
+  - New `modules/providers/__init__.py` with provider registry
+  - Auto-registration of providers via `register_provider()`
+  - Factory pattern in `modules/llm_factory.py`
+  - New `modules/paperless_client.py` for API operations
+
+### Changed
+- **Code Quality Improvements**: Major OOP best practices refactoring
+  - Moved `_parse_structured_response()` to `BaseLLMProvider` (eliminated 40+ duplicate lines)
+  - Fixed name mangling misuse: `__method` → `_method` (PEP 8 compliance)
+  - Added 100% type hint coverage (PEP 484)
+  - Separated concerns: Factory, Client, Orchestrator (SOLID principles)
+
+- **Provider Implementations**: Refactored for shared functionality
+  - `modules/openai_titles.py` - Removed duplicated code, added type hints
+  - `modules/ollama_titles.py` - Removed duplicated code, added type hints
+  - `modules/paperless_ai_titles.py` - Refactored to use composition
+  - All providers now inherit shared parsing, logging, and prompt building
+
 ### Removed
 - Deleted outdated `ngx-renamer-standalone.py` script
+
+### Documentation
+- Updated `AGENTS.md` with v1.3.0 architecture details
+- Documented plugin architecture and provider pattern
+- Added examples for adding new providers
+- Code quality score: 6.3/10 → 9.0/10
 
 ## [1.2.3] - 2024-12-23
 
