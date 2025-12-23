@@ -84,6 +84,8 @@ bump2version major
 This will automatically:
 - Update the `VERSION` file
 - Update `CHANGELOG.md` with the new version header
+- Update `AGENTS.md` version footer
+- Update `ARCHITECTURE.md` version footer
 - Create a git commit with message "Bump version: X.Y.Z → X.Y.Z+1"
 - Create a git tag `vX.Y.Z+1`
 
@@ -133,20 +135,36 @@ Or create manually via the GitHub UI:
 4. Copy the relevant section from CHANGELOG.md as the description
 5. Click "Publish release"
 
-## Manual Version Update (Not Recommended)
+## Manual Version Update (Alternative Method)
 
-If you need to manually update the version:
+If you need to manually update documentation versions without using bump2version:
 
+### Option 1: Use the update script
+```bash
+# Update to version from VERSION file
+./scripts/update-docs-version.sh
+
+# Or specify a version
+./scripts/update-docs-version.sh 1.3.0
+```
+
+This script automatically updates AGENTS.md and ARCHITECTURE.md version numbers.
+
+### Option 2: Fully manual update
 1. Edit `VERSION` file
 2. Edit `.bumpversion.cfg` to update `current_version`
 3. Update `CHANGELOG.md` manually
-4. Commit and tag manually:
+4. Update `AGENTS.md` version footer manually
+5. Update `ARCHITECTURE.md` version footer manually
+6. Commit and tag manually:
 
 ```bash
-git add VERSION .bumpversion.cfg CHANGELOG.md
+git add VERSION .bumpversion.cfg CHANGELOG.md AGENTS.md ARCHITECTURE.md
 git commit -m "Bump version: X.Y.Z → X.Y.Z+1"
 git tag -a vX.Y.Z+1 -m "Release vX.Y.Z+1"
 ```
+
+**Note**: The GitHub Actions CI will validate version consistency on all PRs.
 
 ## Version Checking
 

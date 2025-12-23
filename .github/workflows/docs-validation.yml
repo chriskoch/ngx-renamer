@@ -1,0 +1,123 @@
+name: Documentation Validation
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          echo "🔍 Checking version consistency across documentation..."
+
+          # Read version from VERSION file
+          if [ ! -f VERSION ]; then
+            echo "::error file=VERSION::VERSION file not found"
+            exit 1
+          fi
+
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "📌 Expected version: $VERSION"
+          echo ""
+
+          # Check AGENTS.md
+          echo "📄 Checking AGENTS.md..."
+          if ! grep -q "\*\*Version\*\*: $VERSION" AGENTS.md; then
+            FOUND_VERSION=$(grep '\*\*Version\*\*:' AGENTS.md || echo "not found")
+            echo "::error file=AGENTS.md,line=386::Version mismatch in AGENTS.md"
+            echo "   Expected: **Version**: $VERSION"
+            echo "   Found: $FOUND_VERSION"
+            exit 1
+          fi
+          echo "   ✅ AGENTS.md version is correct"
+
+          # Check ARCHITECTURE.md
+          echo "📄 Checking ARCHITECTURE.md..."
+          if ! grep -q "\*\*Version\*\*: $VERSION" ARCHITECTURE.md; then
+            FOUND_VERSION=$(grep '\*\*Version\*\*:' ARCHITECTURE.md || echo "not found")
+            echo "::error file=ARCHITECTURE.md,line=842::Version mismatch in ARCHITECTURE.md"
+            echo "   Expected: **Version**: $VERSION"
+            echo "   Found: $FOUND_VERSION"
+            exit 1
+          fi
+          echo "   ✅ ARCHITECTURE.md version is correct"
+
+          echo ""
+          echo "✅ All version checks passed!"
+
+      - name: Check for placeholders
+        run: |
+          echo "🔍 Checking for placeholder content..."
+
+          ERRORS=0
+
+          # Check for repository URL placeholder
+          if grep -q "<repository-url>" README.md; then
+            echo "::error file=README.md::Found placeholder <repository-url> in README.md"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          # Check for other common placeholders
+          if grep -qE "<[^>]+>" README.md AGENTS.md ARCHITECTURE.md 2>/dev/null; then
+            echo "::warning::Found potential placeholders in documentation"
+            grep -nE "<[^>]+>" README.md AGENTS.md ARCHITECTURE.md || true
+          fi
+
+          if [ $ERRORS -gt 0 ]; then
+            echo ""
+            echo "❌ Found $ERRORS placeholder(s) in documentation"
+            exit 1
+          fi
+
+          echo "✅ No placeholders found"
+
+      - name: Check documentation links
+        run: |
+          echo "🔍 Checking internal documentation links..."
+
+          # Check that referenced files exist
+          FILES_TO_CHECK=(
+            "README.md"
+            "AGENTS.md"
+            "ARCHITECTURE.md"
+            "CHANGELOG.md"
+            "RELEASING.md"
+            "TESTING_STRUCTURED_OUTPUTS.md"
+            "examples/README.md"
+          )
+
+          MISSING=0
+          for file in "${FILES_TO_CHECK[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::warning file=$file::Referenced file $file does not exist"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+
+          if [ $MISSING -eq 0 ]; then
+            echo "✅ All referenced documentation files exist"
+          else
+            echo "⚠️  $MISSING referenced file(s) missing (non-critical)"
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Documentation validation passed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "All checks completed successfully:"
+          echo "  ✅ Version consistency"
+          echo "  ✅ No placeholders"
+          echo "  ✅ Documentation links"
