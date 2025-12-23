@@ -390,4 +390,4 @@ pytest --cov=modules --cov-report=term-missing
 ---
 
 **License**: GPL-3.0
-**Version**: 1.2.2
+**Version**: 1.2.3

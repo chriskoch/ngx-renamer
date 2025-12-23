@@ -22,11 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Testing requirements and PR guidelines clearly defined
 
 ### Changed
-- **Documentation Updates**: Synchronized all documentation to v1.2.2
-  - Updated AGENTS.md version footer (1.1.0 → 1.2.2)
-  - Updated ARCHITECTURE.md version footer (1.1.0 → 1.2.2)
+- **Documentation Updates**: Synchronized all documentation to v## [Unreleased]
+  - Updated AGENTS.md version footer (1.1.0 → ## [Unreleased])
+  - Updated ARCHITECTURE.md version footer (1.1.0 → ## [Unreleased])
   - Documented structured outputs feature (v1.2.0) in AGENTS.md
-  - Documented Ollama API key authentication (v1.2.2) in AGENTS.md
+  - Documented Ollama API key authentication (v## [Unreleased]) in AGENTS.md
   - Added JSON schema validation to tech stack description
   - Enhanced testing requirements with structured output validation
 
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented security best practices for API key handling
 - Added pre-deployment security checklist
 
-## [1.2.2] - 2025-12-22
+## [## [Unreleased]] - 2025-12-22
 
 ### Added
 - **Ollama API Key Authentication**: Support for authenticated Ollama instances
@@ -372,8 +372,8 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 
 ---
 
-[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.2...HEAD
-[1.2.2]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...v1.2.2
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v## [Unreleased]...HEAD
+[## [Unreleased]]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...v## [Unreleased]
 [1.2.1]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.0.0...v1.1.0
