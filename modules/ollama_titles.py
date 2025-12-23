@@ -29,13 +29,13 @@ class OllamaTitles(BaseLLMProvider):
         super().__init__(settings_file)
         self.ollama_base_url = ollama_base_url
         self.api_key = api_key
-        
+
         headers = {}
 
         # Add authentication header if API key is provided
         if api_key and api_key.strip():
             headers["Authorization"] = f"Bearer {api_key}"
-        
+
         self._client = ollama.Client(host=ollama_base_url, headers=headers)
 
     def _call_ollama_api(self, content: str, role: str = "user") -> Optional[Dict[str, Any]]:

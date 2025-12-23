@@ -6,21 +6,6 @@ class NGXRenamerError(Exception):
     pass
 
 
-class SettingsError(NGXRenamerError):
-    """Exception raised for settings-related errors."""
-    pass
-
-
-class LLMProviderError(NGXRenamerError):
-    """Exception raised for LLM provider errors."""
-    pass
-
-
-class TitleGenerationError(LLMProviderError):
-    """Exception raised when title generation fails."""
-    pass
-
-
 class PaperlessAPIError(NGXRenamerError):
     """Exception raised for Paperless NGX API errors."""
     pass

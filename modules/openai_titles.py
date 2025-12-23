@@ -83,4 +83,3 @@ class OpenAITitles(BaseLLMProvider):
             return self._parse_structured_response(content)
 
         return None
-    

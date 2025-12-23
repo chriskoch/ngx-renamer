@@ -33,7 +33,8 @@ class PaperlessAITitles:
         """
         self._logger = get_logger(self.__class__.__name__)
         self._settings_file = settings_file
-        self.settings = self._load_settings(settings_file)
+        # Load settings from parent class, convert None to empty dict
+        self.settings = self._load_settings(settings_file) or {}
 
         # Create Paperless API client
         self._paperless = PaperlessClient(paperless_url, paperless_api_key)
@@ -56,21 +57,21 @@ class PaperlessAITitles:
             f"settings: {settings_file}"
         )
 
-    def _load_settings(self, settings_file: str) -> Dict[str, Any]:
+    def _load_settings(self, settings_file: str) -> Optional[Dict[str, Any]]:
         """Load settings from YAML file.
 
         Args:
             settings_file: Path to YAML settings file
 
         Returns:
-            dict: Loaded settings, or empty dict if loading fails
+            dict: Loaded settings or None if loading fails
         """
         try:
             with open(settings_file, 'r') as f:
                 return yaml.safe_load(f)
         except Exception as e:
             self._logger.error(f"Error loading settings file: {e}", exc_info=True)
-            return {}
+            return None
 
     # Backward compatibility property
     @property

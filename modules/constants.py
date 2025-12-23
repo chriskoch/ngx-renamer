@@ -7,7 +7,6 @@ MAX_TITLE_LENGTH = 127  # Paperless NGX maximum title length
 PROVIDER_OPENAI = "openai"
 PROVIDER_OLLAMA = "ollama"
 PROVIDER_CLAUDE = "claude"
-PROVIDER_GROK = "grok"      # Future
 
 # Valid providers (for validation)
 VALID_PROVIDERS = frozenset([PROVIDER_OPENAI, PROVIDER_OLLAMA, PROVIDER_CLAUDE])
@@ -17,7 +16,6 @@ DEFAULT_MODELS = {
     PROVIDER_OPENAI: "gpt-4o-mini",
     PROVIDER_OLLAMA: "gpt-oss:latest",
     PROVIDER_CLAUDE: "claude-sonnet-4-5-20250929",
-    PROVIDER_GROK: "grok-2",  # Future
 }
 
 # Provider-specific config keys (for settings.yaml)
@@ -25,7 +23,6 @@ PROVIDER_CONFIG_KEYS = {
     PROVIDER_OPENAI: ["api_key", "model", "organization"],
     PROVIDER_OLLAMA: ["base_url", "api_key", "model"],
     PROVIDER_CLAUDE: ["api_key", "model"],
-    PROVIDER_GROK: ["api_key", "model"],    # Future
 }
 
 # JSON schema for structured title output (shared across all providers)
