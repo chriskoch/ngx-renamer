@@ -3,9 +3,9 @@
 # ============================================================================
 # LLM Provider Configuration
 # ============================================================================
-# Choose which LLM provider to use: "openai" or "ollama"
+# Choose which LLM provider to use: "openai", "claude", or "ollama"
 # Make sure to configure the corresponding API keys/URLs in your .env file
-llm_provider: "ollama"  # options: "openai" or "ollama"
+llm_provider: "ollama"  # options: "openai", "claude", or "ollama"
 
 # ============================================================================
 # Common Settings (applies to all providers)
@@ -17,6 +17,12 @@ with_date: false  # boolean if the title should have the date as a prefix
 # ============================================================================
 openai:
   model: "gpt-4o"  # OpenAI model to use (gpt-4o, gpt-4o-mini, gpt-4-turbo, etc.)
+
+# ============================================================================
+# Anthropic Claude-specific Configuration
+# ============================================================================
+claude:
+  model: "claude-3-5-sonnet-20241022"  # Claude model to use (latest with strong reasoning)
 
 # ============================================================================
 # Ollama-specific Configuration
