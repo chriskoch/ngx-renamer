@@ -1,21 +1,9 @@
-import json
+from typing import Optional
 from openai import OpenAI
+from openai.types.chat import ChatCompletion
 from modules.base_llm_provider import BaseLLMProvider
-
-
-# JSON schema for structured title output
-TITLE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "title": {
-            "type": "string",
-            "maxLength": 127,
-            "description": "The generated document title"
-        }
-    },
-    "required": ["title"],
-    "additionalProperties": False
-}
+from modules.logger import get_logger
+from modules.constants import TITLE_SCHEMA, DEFAULT_MODELS, MAX_TITLE_LENGTH, PROVIDER_OPENAI
 
 
 class OpenAITitles(BaseLLMProvider):
@@ -24,7 +12,7 @@ class OpenAITitles(BaseLLMProvider):
     Uses the OpenAI API to generate document titles from text content.
     """
 
-    def __init__(self, openai_api_key, settings_file="settings.yaml"):
+    def __init__(self, openai_api_key: str, settings_file: str = "settings.yaml") -> None:
         """Initialize OpenAI provider.
 
         Args:
@@ -32,9 +20,9 @@ class OpenAITitles(BaseLLMProvider):
             settings_file: Path to settings.yaml configuration file
         """
         super().__init__(settings_file)
-        self.__openai = OpenAI(api_key=openai_api_key)
+        self._openai_client = OpenAI(api_key=openai_api_key)
 
-    def __call_openai_api(self, content, role="user"):
+    def _call_openai_api(self, content: str, role: str = "user") -> Optional[ChatCompletion]:
         """Call OpenAI chat completion API.
 
         Args:
@@ -49,12 +37,12 @@ class OpenAITitles(BaseLLMProvider):
             # New structure: settings["openai"]["model"]
             # Legacy structure: settings["openai_model"]
             if "openai" in self.settings and isinstance(self.settings["openai"], dict):
-                model = self.settings["openai"].get("model", "gpt-4o-mini")
+                model = self.settings["openai"].get("model", DEFAULT_MODELS[PROVIDER_OPENAI])
             else:
                 # Backward compatibility - check root level
-                model = self.settings.get("openai_model", "gpt-4o-mini")
+                model = self.settings.get("openai_model", DEFAULT_MODELS[PROVIDER_OPENAI])
 
-            res = self.__openai.chat.completions.create(
+            res = self._openai_client.chat.completions.create(
                 messages=[
                     {
                         "role": role,
@@ -73,10 +61,10 @@ class OpenAITitles(BaseLLMProvider):
             )
             return res
         except Exception as e:
-            print(f"Error generating title from GPT: {e}")
+            self._logger.error(f"Error generating title from GPT: {e}")
             return None
 
-    def generate_title_from_text(self, text):
+    def generate_title_from_text(self, text: str) -> Optional[str]:
         """Generate a title from text using OpenAI.
 
         Args:
@@ -89,48 +77,10 @@ class OpenAITitles(BaseLLMProvider):
         if not prompt:
             return None
 
-        result = self.__call_openai_api(prompt)
+        result = self._call_openai_api(prompt)
         if result:
             content = result.choices[0].message.content
             return self._parse_structured_response(content)
 
         return None
-
-    def _parse_structured_response(self, content):
-        """Parse structured JSON response from OpenAI.
-
-        Args:
-            content: JSON string from OpenAI response
-
-        Returns:
-            str: Extracted title, or None if parsing failed
-        """
-        try:
-            # Parse JSON response
-            data = json.loads(content)
-
-            # Extract title field
-            title = data.get("title", "")
-
-            if not title:
-                print("Warning: Structured response missing 'title' field or title is empty")
-                print(f"Response: {content}")
-                return None
-
-            # Auto-truncate if title exceeds Paperless NGX limit (127 chars)
-            if len(title) > 127:
-                print(f"Warning: Title exceeds 127 chars, truncating: {title}")
-                title = title[:127]
-
-            return title
-
-        except json.JSONDecodeError as e:
-            print(f"Error: OpenAI returned invalid JSON: {e}")
-            print(f"Content: {content}")
-            print("This may indicate the model doesn't support structured outputs.")
-            return None
-        except Exception as e:
-            print(f"Error parsing structured response: {e}")
-            print(f"Content: {content}")
-            return None
     

@@ -1,22 +1,9 @@
 """Ollama LLM provider for title generation."""
-import json
+from typing import Optional, Dict, Any
 import ollama
 from modules.base_llm_provider import BaseLLMProvider
-
-
-# JSON schema for structured title output
-TITLE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "title": {
-            "type": "string",
-            "maxLength": 127,
-            "description": "The generated document title"
-        }
-    },
-    "required": ["title"],
-    "additionalProperties": False
-}
+from modules.logger import get_logger
+from modules.constants import TITLE_SCHEMA, DEFAULT_MODELS, MAX_TITLE_LENGTH, PROVIDER_OLLAMA
 
 
 class OllamaTitles(BaseLLMProvider):
@@ -26,7 +13,12 @@ class OllamaTitles(BaseLLMProvider):
     Requires Ollama to be running locally or accessible via network.
     """
 
-    def __init__(self, ollama_base_url, api_key=None, settings_file="settings.yaml"):
+    def __init__(
+        self,
+        ollama_base_url: str,
+        api_key: Optional[str] = None,
+        settings_file: str = "settings.yaml"
+    ) -> None:
         """Initialize Ollama provider.
 
         Args:
@@ -46,7 +38,7 @@ class OllamaTitles(BaseLLMProvider):
         
         self._client = ollama.Client(host=ollama_base_url, headers=headers)
 
-    def __call_ollama_api(self, content, role="user"):
+    def _call_ollama_api(self, content: str, role: str = "user") -> Optional[Dict[str, Any]]:
         """Call Ollama chat completion API.
 
         Args:
@@ -59,9 +51,9 @@ class OllamaTitles(BaseLLMProvider):
         try:
             # Get model from settings
             if "ollama" in self.settings and isinstance(self.settings["ollama"], dict):
-                model = self.settings["ollama"].get("model", "gpt-oss:latest")
+                model = self.settings["ollama"].get("model", DEFAULT_MODELS[PROVIDER_OLLAMA])
             else:
-                model = "gpt-oss:latest"
+                model = DEFAULT_MODELS[PROVIDER_OLLAMA]
 
             # Pass JSON schema directly to format parameter
             # Ollama Python client accepts: Union[Literal['', 'json'], dict[str, Any], None]
@@ -80,19 +72,19 @@ class OllamaTitles(BaseLLMProvider):
         except ollama.ResponseError as e:
             error_msg = str(e).lower()
             if "not found" in error_msg or "model" in error_msg:
-                model = self.settings.get("ollama", {}).get("model", "gpt-oss:latest")
-                print(f"Error: Model '{model}' not found in Ollama.")
-                print(f"Please pull the model first: ollama pull {model}")
+                model = self.settings.get("ollama", {}).get("model", DEFAULT_MODELS[PROVIDER_OLLAMA])
+                self._logger.error(f"Model '{model}' not found in Ollama")
+                self._logger.error(f"Please pull the model first: ollama pull {model}")
             else:
-                print(f"Error generating title from Ollama (API error): {e}")
+                self._logger.error(f"Error generating title from Ollama (API error): {e}")
             return None
         except Exception as e:
-            print(f"Error generating title from Ollama: {e}")
-            print(f"Make sure Ollama is running at {self.ollama_base_url}")
-            print(f"You can test with: curl {self.ollama_base_url}/api/version")
+            self._logger.error(f"Error generating title from Ollama: {e}")
+            self._logger.error(f"Make sure Ollama is running at {self.ollama_base_url}")
+            self._logger.error(f"You can test with: curl {self.ollama_base_url}/api/version")
             return None
 
-    def generate_title_from_text(self, text):
+    def generate_title_from_text(self, text: str) -> Optional[str]:
         """Generate a title from text using Ollama.
 
         Args:
@@ -105,52 +97,14 @@ class OllamaTitles(BaseLLMProvider):
         if not prompt:
             return None
 
-        result = self.__call_ollama_api(prompt)
+        result = self._call_ollama_api(prompt)
         if result:
             try:
                 content = result['message']['content']
                 return self._parse_structured_response(content)
             except (KeyError, TypeError) as e:
-                print(f"Unexpected response structure from Ollama: {e}")
-                print(f"Response: {result}")
+                self._logger.error(f"Unexpected response structure from Ollama: {e}")
+                self._logger.error(f"Response: {result}")
                 return None
 
         return None
-
-    def _parse_structured_response(self, content):
-        """Parse structured JSON response from Ollama.
-
-        Args:
-            content: JSON string from Ollama response
-
-        Returns:
-            str: Extracted title, or None if parsing failed
-        """
-        try:
-            # Parse JSON response
-            data = json.loads(content)
-
-            # Extract title field
-            title = data.get("title", "")
-
-            if not title:
-                print("Warning: Structured response missing 'title' field or title is empty")
-                print(f"Response: {content}")
-                return None
-
-            # Auto-truncate if title exceeds Paperless NGX limit (127 chars)
-            if len(title) > 127:
-                print(f"Warning: Title exceeds 127 chars, truncating: {title}")
-                title = title[:127]
-
-            return title
-
-        except json.JSONDecodeError as e:
-            print(f"Error: Ollama returned invalid JSON: {e}")
-            print(f"Content: {content}")
-            print("This may indicate the model doesn't support structured outputs.")
-            return None
-        except Exception as e:
-            print(f"Error parsing structured response: {e}")
-            print(f"Content: {content}")
-            return None

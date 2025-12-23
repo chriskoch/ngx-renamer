@@ -1,12 +1,24 @@
-import requests
+from typing import Optional, Dict, Any
 import yaml
 
-from modules.openai_titles import OpenAITitles
-from modules.ollama_titles import OllamaTitles
+from modules.base_llm_provider import BaseLLMProvider
+from modules.llm_factory import LLMFactory
+from modules.paperless_client import PaperlessClient
+from modules.exceptions import PaperlessAPIError
+from modules.logger import get_logger
+from modules.constants import PROVIDER_OPENAI
 
 
 class PaperlessAITitles:
-    def __init__(self, openai_api_key, ollama_base_url, ollama_api_key, paperless_url, paperless_api_key, settings_file="settings.yaml"):
+    def __init__(
+        self,
+        openai_api_key: Optional[str] = None,
+        ollama_base_url: Optional[str] = None,
+        ollama_api_key: Optional[str] = None,
+        paperless_url: str = None,
+        paperless_api_key: str = None,
+        settings_file: str = "settings.yaml"
+    ) -> None:
         """Initialize Paperless AI Titles orchestrator.
 
         Args:
@@ -17,20 +29,31 @@ class PaperlessAITitles:
             paperless_api_key: Paperless NGX API key
             settings_file: Path to settings.yaml configuration file
         """
-        self.openai_api_key = openai_api_key
-        self.ollama_base_url = ollama_base_url
-        self.ollama_api_key = ollama_api_key
-        self.paperless_url = paperless_url
-        self.paperless_api_key = paperless_api_key
-        self.settings_file = settings_file
-
-        # Load settings to determine provider
+        self._logger = get_logger(self.__class__.__name__)
+        self._settings_file = settings_file
         self.settings = self._load_settings(settings_file)
 
-        # Create appropriate LLM provider based on settings
-        self.ai = self._create_llm_provider()
+        # Create Paperless API client
+        self._paperless = PaperlessClient(paperless_url, paperless_api_key)
 
-    def _load_settings(self, settings_file):
+        # Create LLM provider using factory
+        factory = LLMFactory()
+        provider_name = self.settings.get("llm_provider", PROVIDER_OPENAI)
+
+        self._llm_provider = factory.create_provider(
+            provider_name=provider_name,
+            openai_api_key=openai_api_key,
+            ollama_base_url=ollama_base_url,
+            ollama_api_key=ollama_api_key,
+            settings_file=settings_file
+        )
+
+        self._logger.info(
+            f"Initialized with provider: {provider_name}, "
+            f"settings: {settings_file}"
+        )
+
+    def _load_settings(self, settings_file: str) -> Dict[str, Any]:
         """Load settings from YAML file.
 
         Args:
@@ -43,103 +66,50 @@ class PaperlessAITitles:
             with open(settings_file, 'r') as f:
                 return yaml.safe_load(f)
         except Exception as e:
-            print(f"Error loading settings file: {e}")
+            self._logger.error(f"Error loading settings file: {e}", exc_info=True)
             return {}
 
-    def _create_llm_provider(self):
-        """Factory method to create the appropriate LLM provider based on settings.
+    # Backward compatibility property
+    @property
+    def ai(self) -> BaseLLMProvider:
+        """Backward compatibility: access to LLM provider."""
+        return self._llm_provider
 
-        Returns:
-            BaseLLMProvider: Instance of OpenAITitles or OllamaTitles
 
-        Raises:
-            ValueError: If provider is unknown or required credentials are missing
+    def generate_and_update_title(self, document_id: str) -> None:
+        """Generate AI title and update document in Paperless NGX.
+
+        Args:
+            document_id: Paperless document ID to process
         """
-        # Get provider from settings, default to "openai" for backward compatibility
-        provider = self.settings.get("llm_provider", "openai").lower()
+        try:
+            # Fetch document details
+            document = self._paperless.get_document(document_id)
+            current_title = document.get('title', 'Unknown')
 
-        if provider == "openai":
-            if not self.openai_api_key:
-                raise ValueError(
-                    "OPENAI_API_KEY environment variable is required when using OpenAI provider.\n"
-                    "Either set OPENAI_API_KEY or change llm_provider to 'ollama' in settings.yaml"
+            self._logger.info(f"Current Document Title: {current_title}")
+
+            # Extract content
+            content = document.get("content", "")
+            if not content:
+                self._logger.warning(
+                    f"Document {document_id} has no content, skipping"
                 )
-            return OpenAITitles(self.openai_api_key, self.settings_file)
+                return
 
-        elif provider == "ollama":
-            if not self.ollama_base_url:
-                raise ValueError(
-                    "OLLAMA_BASE_URL environment variable is required when using Ollama provider.\n"
-                    "Either set OLLAMA_BASE_URL or change llm_provider to 'openai' in settings.yaml"
-                )
-            return OllamaTitles(self.ollama_base_url, self.ollama_api_key, self.settings_file)
-
-        else:
-            raise ValueError(
-                f"Unknown LLM provider '{provider}'. Valid options: 'openai', 'ollama'\n"
-                f"Check the 'llm_provider' setting in {self.settings_file}"
-            )
-
-
-    def __get_document_details(self, document_id):
-        headers = {
-            "Authorization": f"Token {self.paperless_api_key}",
-            "Content-Type": "application/json",
-        }
-
-        response = requests.get(
-            f"{self.paperless_url}/documents/{document_id}/", headers=headers
-        )
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(
-                f"Failed to get document details from paperless-ngx. Status code: {response.status_code}"
-            )
-            print(response.text)
-            return None
-
-
-    def __update_document_title(self, document_id, new_title):
-        payload = {"title": new_title}
-
-        headers = {
-            "Authorization": f"Token {self.paperless_api_key}",
-            "Content-Type": "application/json",
-        }
-
-        response = requests.patch(
-            f"{self.paperless_url}/documents/{document_id}/",
-            json=payload,
-            headers=headers,
-        )
-
-        if response.status_code == 200:
-            print(
-                f"Title of {document_id} successfully updated in paperless-ngx to {new_title}."
-            )
-        else:
-            print(
-                f"Failed to update title in paperless-ngx. Status code: {response.status_code}"
-            )
-            print(response.text)
-
-
-    def generate_and_update_title(self, document_id):
-        document_details = self.__get_document_details(document_id)
-        if document_details:
-            print(f"Current Document Title: {document_details['title']}")
-
-            content = document_details.get("content", "")
-
-            new_title = self.ai.generate_title_from_text(content)
+            # Generate new title
+            new_title = self._llm_provider.generate_title_from_text(content)
 
             if new_title:
-                print(f"Generated Document Title: {new_title}")
-
-                self.__update_document_title(document_id, new_title)
+                self._logger.info(f"Generated Document Title: {new_title}")
+                self._paperless.update_document_title(document_id, new_title)
             else:
-                print("Failed to generate the document title.")
-        else:
-            print("Failed to retrieve document details.")
+                self._logger.error("Failed to generate document title")
+
+        except PaperlessAPIError as e:
+            self._logger.error(f"Paperless API error: {e}")
+        except Exception as e:
+            self._logger.error(
+                f"Unexpected error processing document {document_id}: {e}",
+                exc_info=True
+            )
