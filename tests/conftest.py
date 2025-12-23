@@ -88,6 +88,18 @@ def settings_invalid_provider_path(fixtures_dir):
 
 
 @pytest.fixture
+def settings_claude_path(fixtures_dir):
+    """Path to Claude provider settings fixture."""
+    return fixtures_dir / "settings_claude.yaml"
+
+
+@pytest.fixture
+def settings_claude_with_date_path(fixtures_dir):
+    """Path to Claude settings with date=true fixture."""
+    return fixtures_dir / "settings_claude_with_date.yaml"
+
+
+@pytest.fixture
 def settings_valid(settings_valid_path):
     """Load and return valid settings as dict."""
     with open(settings_valid_path, 'r') as f:
@@ -108,6 +120,19 @@ def openai_api_key():
     key = os.getenv("OPENAI_API_KEY")
     if not key:
         pytest.skip("OPENAI_API_KEY not set - skipping OpenAI integration test")
+    return key
+
+
+@pytest.fixture
+def claude_api_key():
+    """
+    Get Anthropic Claude API key from environment.
+
+    Tests marked with @pytest.mark.claude will skip if key is not set.
+    """
+    key = os.getenv("CLAUDE_API_KEY")
+    if not key:
+        pytest.skip("CLAUDE_API_KEY not set - skipping Claude integration test")
     return key
 
 

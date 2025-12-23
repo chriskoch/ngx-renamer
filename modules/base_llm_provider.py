@@ -1,7 +1,11 @@
 """Base abstract class for LLM providers in ngx-renamer."""
 from abc import ABC, abstractmethod
 from datetime import datetime
+import json
+from typing import Optional, Dict, Any
 import yaml
+from modules.logger import get_logger
+from modules.constants import MAX_TITLE_LENGTH
 
 
 class BaseLLMProvider(ABC):
@@ -11,16 +15,17 @@ class BaseLLMProvider(ABC):
     and implement the generate_title_from_text method.
     """
 
-    def __init__(self, settings_file="settings.yaml"):
+    def __init__(self, settings_file: str = "settings.yaml") -> None:
         """Initialize the provider with settings file.
 
         Args:
             settings_file: Path to the YAML settings file
         """
+        self._logger = get_logger(self.__class__.__name__)
         self.settings_file = settings_file
         self.settings = self._load_settings(settings_file)
 
-    def _load_settings(self, settings_file):
+    def _load_settings(self, settings_file: str) -> Optional[Dict[str, Any]]:
         """Load settings from YAML file.
 
         Args:
@@ -33,10 +38,10 @@ class BaseLLMProvider(ABC):
             with open(settings_file, 'r') as f:
                 return yaml.safe_load(f)
         except Exception as e:
-            print(f"Error loading settings file: {e}")
+            self._logger.error(f"Error loading settings file: {e}", exc_info=True)
             return None
 
-    def _build_prompt(self, text):
+    def _build_prompt(self, text: str) -> Optional[str]:
         """Build the prompt from settings and text.
 
         This method is shared across all providers as they use the same prompt format.
@@ -48,14 +53,14 @@ class BaseLLMProvider(ABC):
             str: Complete prompt ready to send to LLM, or None if prompt settings not found
         """
         if not self.settings:
-            print("Settings not loaded.")
+            self._logger.error("Settings not loaded")
             return None
 
         with_date = self.settings.get("with_date", False)
         setting_prompt = self.settings.get("prompt", None)
 
         if not setting_prompt:
-            print("Prompt settings not found.")
+            self._logger.error("Prompt settings not found")
             return None
 
         # Build the main prompt
@@ -76,8 +81,53 @@ class BaseLLMProvider(ABC):
 
         return prompt
 
+    def _parse_structured_response(self, content: str) -> Optional[str]:
+        """Parse structured JSON response from LLM provider.
+
+        This method is shared across all providers as they use the same
+        JSON schema format for structured outputs.
+
+        Args:
+            content: JSON string from LLM response
+
+        Returns:
+            str: Extracted title, or None if parsing failed
+        """
+        try:
+            # Parse JSON response
+            data = json.loads(content)
+
+            # Extract title field
+            title = data.get("title", "")
+
+            if not title:
+                self._logger.warning(
+                    "Structured response missing 'title' field or title is empty. "
+                    f"Response: {content}"
+                )
+                return None
+
+            # Auto-truncate if title exceeds Paperless NGX limit
+            if len(title) > MAX_TITLE_LENGTH:
+                self._logger.warning(
+                    f"Title exceeds {MAX_TITLE_LENGTH} chars, truncating: {title}"
+                )
+                title = title[:MAX_TITLE_LENGTH]
+
+            return title
+
+        except json.JSONDecodeError as e:
+            self._logger.error(
+                f"LLM returned invalid JSON: {e}. Content: {content}. "
+                "This may indicate the model doesn't support structured outputs."
+            )
+            return None
+        except Exception as e:
+            self._logger.error(f"Error parsing structured response: {e}. Content: {content}")
+            return None
+
     @abstractmethod
-    def generate_title_from_text(self, text):
+    def generate_title_from_text(self, text: str) -> Optional[str]:
         """Generate a title from the given text.
 
         This method must be implemented by all provider subclasses.

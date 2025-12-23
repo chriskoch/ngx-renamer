@@ -17,6 +17,7 @@ import pytest
 from modules.paperless_ai_titles import PaperlessAITitles
 from modules.openai_titles import OpenAITitles
 from modules.ollama_titles import OllamaTitles
+from modules.claude_titles import ClaudeTitles
 
 
 @pytest.mark.integration
@@ -65,6 +66,28 @@ class TestLLMProviderSelection:
         assert ai_titles.settings.get("llm_provider") == "ollama"
         assert ai_titles.settings.get("ollama", {}).get("model") == "gpt-oss:latest"
 
+    def test_select_claude_provider(
+        self,
+        claude_api_key,
+        settings_claude_path,
+        paperless_url,
+        paperless_api_key,
+    ):
+        """Test that Claude provider is selected when llm_provider='claude'."""
+        ai_titles = PaperlessAITitles(
+            openai_api_key=None,
+            ollama_base_url=None,
+            claude_api_key=claude_api_key,
+            paperless_url=paperless_url,
+            paperless_api_key=paperless_api_key,
+            settings_file=str(settings_claude_path),
+        )
+
+        # Verify correct provider was instantiated
+        assert isinstance(ai_titles.ai, ClaudeTitles)
+        assert ai_titles.settings.get("llm_provider") == "claude"
+        assert ai_titles.settings.get("claude", {}).get("model") == "claude-sonnet-4-5-20250929"
+
     def test_missing_openai_api_key(
         self,
         settings_openai_new_format_path,
@@ -103,6 +126,27 @@ class TestLLMProviderSelection:
 
         error_message = str(exc_info.value)
         assert "OLLAMA_BASE_URL" in error_message
+        assert "required" in error_message.lower()
+
+    def test_missing_claude_api_key(
+        self,
+        settings_claude_path,
+        paperless_url,
+        paperless_api_key,
+    ):
+        """Test error when Claude is selected but API key is missing."""
+        with pytest.raises(ValueError) as exc_info:
+            PaperlessAITitles(
+                openai_api_key=None,
+                ollama_base_url=None,
+                claude_api_key=None,  # Missing API key
+                paperless_url=paperless_url,
+                paperless_api_key=paperless_api_key,
+                settings_file=str(settings_claude_path),
+            )
+
+        error_message = str(exc_info.value)
+        assert "CLAUDE_API_KEY" in error_message
         assert "required" in error_message.lower()
 
     def test_invalid_provider(

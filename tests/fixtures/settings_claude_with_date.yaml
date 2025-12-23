@@ -1,0 +1,23 @@
+# Settings for Claude provider with date extraction
+llm_provider: "claude"
+with_date: true
+
+claude:
+  model: "claude-sonnet-4-5-20250929"
+
+prompt:
+  main: |
+    You are a document title generator. Generate a concise title (50-100 chars).
+    Format: "Sender - Brief Description"
+    Output only the title, nothing else.
+
+    Document text:
+
+  with_date: |
+
+    Extract the document date and prefix with YYYY-MM-DD format.
+    If no date found, use {current_date}.
+
+  no_date: ""
+  pre_content: ""
+  post_content: ""
