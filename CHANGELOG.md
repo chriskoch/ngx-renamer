@@ -31,12 +31,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `change_title.py` - Load `CLAUDE_API_KEY` from environment
   - `modules/constants.py` - Added `PROVIDER_CLAUDE` constant and validation
 
+- **Claude Model Update**: Migrated to latest stable model
+  - Updated from deprecated Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`) to Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`)
+  - Claude 3.5 Sonnet will be retired October 28, 2025
+  - Updated all configuration files, test fixtures, and documentation
+  - All tests passing with new model (10/10 Claude tests)
+
 - **Dependency Updates**:
   - Added `anthropic>=0.39.0` to `requirements.txt`
+
+### Removed
+- **Code Cleanup**: Removed unused code and technical debt
+  - Removed 3 unused exception classes: `SettingsError`, `LLMProviderError`, `TitleGenerationError`
+  - Removed unused `PROVIDER_GROK` constants (future placeholder not actively developed)
+  - Fixed trailing whitespace in `ollama_titles.py` and `openai_titles.py`
+  - Simplified `exceptions.py` from 5 classes to 2 (kept only used exceptions)
+  - Net code reduction: -18 lines (-7% overall)
 
 ### Documentation
 - Plugin architecture successfully validated with third provider
 - Adding new provider now requires ~100 lines vs ~200 with old architecture
+- Updated all Claude model references to Sonnet 4.5
+- Updated configuration examples in README.md, settings.yaml, and .env.example
 
 ## [1.3.0] - 2024-12-23
 
@@ -450,7 +466,9 @@ See the comprehensive [Troubleshooting section in README.md](README.md#troublesh
 
 ---
 
-[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/chriskoch/ngx-renamer/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.3...v1.3.0
 [1.2.3]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/chriskoch/ngx-renamer/compare/v1.2.0...v1.2.1
