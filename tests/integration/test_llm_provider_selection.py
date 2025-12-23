@@ -86,7 +86,7 @@ class TestLLMProviderSelection:
         # Verify correct provider was instantiated
         assert isinstance(ai_titles.ai, ClaudeTitles)
         assert ai_titles.settings.get("llm_provider") == "claude"
-        assert ai_titles.settings.get("claude", {}).get("model") == "claude-3-5-sonnet-20241022"
+        assert ai_titles.settings.get("claude", {}).get("model") == "claude-sonnet-4-5-20250929"
 
     def test_missing_openai_api_key(
         self,

@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `ClaudeTitles` provider in `modules/claude_titles.py`
   - Uses Claude's tool calling feature for structured JSON outputs
   - Supports same configuration pattern as existing providers
-  - Default model: `claude-3-5-sonnet-20241022`
+  - Default model: `claude-sonnet-4-5-20250929` (Claude Sonnet 4.5)
   - Activated via `llm_provider: "claude"` in `settings.yaml`
   - Requires `CLAUDE_API_KEY` environment variable
 

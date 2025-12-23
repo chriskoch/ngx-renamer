@@ -22,7 +22,7 @@ openai:
 # Anthropic Claude-specific Configuration
 # ============================================================================
 claude:
-  model: "claude-3-5-sonnet-20241022"  # Claude model to use (latest with strong reasoning)
+  model: "claude-sonnet-4-5-20250929"  # Latest Claude Sonnet 4.5 (replaces deprecated 3.5)
 
 # ============================================================================
 # Ollama-specific Configuration

@@ -3,7 +3,7 @@ llm_provider: "claude"
 with_date: true
 
 claude:
-  model: "claude-3-5-sonnet-20241022"
+  model: "claude-sonnet-4-5-20250929"
 
 prompt:
   main: |

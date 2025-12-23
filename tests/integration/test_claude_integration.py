@@ -71,7 +71,7 @@ class TestClaudeTitleGeneration:
         assert "claude" in ai.settings
         assert "with_date" in ai.settings
         assert "prompt" in ai.settings
-        assert ai.settings["claude"]["model"] == "claude-3-5-sonnet-20241022"
+        assert ai.settings["claude"]["model"] == "claude-sonnet-4-5-20250929"
         assert ai.settings["with_date"] is False
 
     def test_invalid_settings_file(self, claude_api_key, tmp_path):

@@ -16,7 +16,7 @@ VALID_PROVIDERS = frozenset([PROVIDER_OPENAI, PROVIDER_OLLAMA, PROVIDER_CLAUDE])
 DEFAULT_MODELS = {
     PROVIDER_OPENAI: "gpt-4o-mini",
     PROVIDER_OLLAMA: "gpt-oss:latest",
-    PROVIDER_CLAUDE: "claude-3-5-sonnet-20241022",
+    PROVIDER_CLAUDE: "claude-sonnet-4-5-20250929",
     PROVIDER_GROK: "grok-2",  # Future
 }
 

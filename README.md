@@ -159,7 +159,7 @@ Choose between **OpenAI** (cloud), **Anthropic Claude** (cloud), or **Ollama** (
    ```yaml
    llm_provider: "claude"
    claude:
-     model: "claude-3-5-sonnet-20241022"  # Latest model with strong reasoning
+     model: "claude-sonnet-4-5-20250929"  # Latest Claude Sonnet 4.5 model
    ```
 
 ### Ollama Setup
@@ -213,7 +213,7 @@ llm_provider: "openai"  # or "claude" or "ollama"
 openai:
   model: "gpt-4o-mini"  # or "gpt-4o" for better quality
 claude:
-  model: "claude-3-5-sonnet-20241022"  # Latest Anthropic model
+  model: "claude-sonnet-4-5-20250929"  # Latest Claude Sonnet 4.5 model
 ollama:
   model: "gpt-oss:latest"
 ```
