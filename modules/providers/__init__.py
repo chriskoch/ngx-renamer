@@ -54,6 +54,8 @@ def list_providers() -> list[str]:
 
 from modules.ollama_titles import OllamaTitles  # noqa: E402
 from modules.openai_titles import OpenAITitles  # noqa: E402
+from modules.claude_titles import ClaudeTitles  # noqa: E402
 
 register_provider("ollama", OllamaTitles)
 register_provider("openai", OpenAITitles)
+register_provider("claude", ClaudeTitles)

@@ -3,7 +3,7 @@
 from typing import Optional
 from modules.base_llm_provider import BaseLLMProvider
 from modules.logger import get_logger
-from modules.constants import PROVIDER_OPENAI, PROVIDER_OLLAMA
+from modules.constants import PROVIDER_OPENAI, PROVIDER_OLLAMA, PROVIDER_CLAUDE
 from modules.providers import get_provider_class
 
 
@@ -16,18 +16,20 @@ class LLMFactory:
     def create_provider(
         self,
         provider_name: str,
-        openai_api_key: Optional[str],
-        ollama_base_url: Optional[str],
-        ollama_api_key: Optional[str],
-        settings_file: str
+        openai_api_key: Optional[str] = None,
+        ollama_base_url: Optional[str] = None,
+        ollama_api_key: Optional[str] = None,
+        claude_api_key: Optional[str] = None,
+        settings_file: str = "settings.yaml"
     ) -> BaseLLMProvider:
         """Create appropriate LLM provider based on configuration.
 
         Args:
-            provider_name: Name of provider ("openai" or "ollama")
+            provider_name: Name of provider ("openai", "ollama", or "claude")
             openai_api_key: OpenAI API key (required for OpenAI)
             ollama_base_url: Ollama base URL (required for Ollama)
             ollama_api_key: Ollama API key (optional)
+            claude_api_key: Anthropic API key (required for Claude)
             settings_file: Path to settings.yaml
 
         Returns:
@@ -49,6 +51,10 @@ class LLMFactory:
         elif provider == PROVIDER_OLLAMA:
             return self._create_ollama_provider(
                 provider_class, ollama_base_url, ollama_api_key, settings_file
+            )
+        elif provider == PROVIDER_CLAUDE:
+            return self._create_claude_provider(
+                provider_class, claude_api_key, settings_file
             )
         else:
             # This shouldn't happen if registry is working correctly,
@@ -89,3 +95,20 @@ class LLMFactory:
 
         self._logger.info(f"Creating Ollama provider at {base_url}")
         return provider_class(base_url, api_key, settings_file)
+
+    def _create_claude_provider(
+        self,
+        provider_class,
+        api_key: Optional[str],
+        settings_file: str
+    ) -> BaseLLMProvider:
+        """Create Claude provider instance."""
+        if not api_key:
+            raise ValueError(
+                "CLAUDE_API_KEY environment variable is required when using "
+                "Claude provider. Either set CLAUDE_API_KEY or change "
+                "llm_provider to 'openai' or 'ollama' in settings.yaml"
+            )
+
+        self._logger.info(f"Creating Claude provider with settings: {settings_file}")
+        return provider_class(api_key, settings_file)

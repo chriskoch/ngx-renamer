@@ -27,6 +27,7 @@ def main():
     openai_api_key = os.getenv("OPENAI_API_KEY")
     ollama_base_url = os.getenv("OLLAMA_BASE_URL")
     ollama_api_key = os.getenv("OLLAMA_API_KEY")
+    claude_api_key = os.getenv("CLAUDE_API_KEY")
 
     logger.info("Starting Paperless AI Titles")
     logger.info(f"Paperless Document ID: {document_id}")
@@ -37,6 +38,7 @@ def main():
         openai_api_key,
         ollama_base_url,
         ollama_api_key,
+        claude_api_key,
         paperless_url,
         paperless_api_key,
         f"{run_dir}/settings.yaml"

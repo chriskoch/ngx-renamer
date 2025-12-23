@@ -15,6 +15,7 @@ class PaperlessAITitles:
         openai_api_key: Optional[str] = None,
         ollama_base_url: Optional[str] = None,
         ollama_api_key: Optional[str] = None,
+        claude_api_key: Optional[str] = None,
         paperless_url: str = None,
         paperless_api_key: str = None,
         settings_file: str = "settings.yaml"
@@ -25,6 +26,7 @@ class PaperlessAITitles:
             openai_api_key: OpenAI API key (required if using OpenAI provider)
             ollama_base_url: Ollama base URL (required if using Ollama provider)
             ollama_api_key: Ollama API key (optional, for authenticated Ollama instances)
+            claude_api_key: Anthropic API key (required if using Claude provider)
             paperless_url: Paperless NGX API URL
             paperless_api_key: Paperless NGX API key
             settings_file: Path to settings.yaml configuration file
@@ -45,6 +47,7 @@ class PaperlessAITitles:
             openai_api_key=openai_api_key,
             ollama_base_url=ollama_base_url,
             ollama_api_key=ollama_api_key,
+            claude_api_key=claude_api_key,
             settings_file=settings_file
         )
 
